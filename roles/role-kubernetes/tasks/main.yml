@@ -1,0 +1,168 @@
+---
+- name: Include OS-specific variables.
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- include_tasks: setup-RedHat.yml
+  when: ansible_os_family == 'RedHat'
+
+- include_tasks: setup-Debian.yml
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure dependencies are installed.
+  ansible.builtin.package: 
+    name: curl 
+    state: present
+
+- name: Disable swap
+  ansible.builtin.command: swapoff -a
+  when: ansible_swaptotal_mb > 0
+
+- name: Remowe swap from /etc/fstab
+  ansible.builtin.lineinfile:
+    path: '/etc/fstab'
+    regexp: '\sswap\s'
+    state: absent
+
+- name: Install Kubernetes packages.
+  ansible.builtin.package:
+    name: "{{ item.name | default(item) }}"
+    state: "{{ item.state | default('present') }}"
+  notify: restart kubelet
+  with_items: "{{ kubernetes_packages }}"
+
+- include_tasks: sysctl-setup.yml
+
+- include_tasks: kubelet-setup.yml
+
+- name: Ensure kubelet is started and enabled at boot.
+  ansible.builtin.service:
+    name: kubelet
+    state: started
+    enabled: true
+
+- name: Check if Kubernetes has already been initialized.
+  ansible.builtin.stat:
+    path: /etc/kubernetes/admin.conf
+  register: kubernetes_init_stat
+
+- name: Reset Old Cluster on all nodes
+  ansible.builtin.command: kubeadm reset --force
+  when: kubernetes_init_stat.stat.exists
+
+# Add kube-vip static pod
+- include_tasks: kube-vip.yml
+  when: kubernetes_role == 'first-control-node' and groups['k8s_ha_control_node'] | length > 1
+
+# Set up first control node.
+- include_tasks: control-node-setup.yml
+  when: kubernetes_role == 'first-control-node'
+
+# Set up nodes.
+- name: Get the kubeadm join command from the Kubernetes control node.
+  ansible.builtin.command: kubeadm token create --print-join-command
+  changed_when: false
+  when: kubernetes_role == 'first-control-node'
+  register: kubernetes_join_command_result
+
+- name: Join other control-node if set
+  block:
+    - name: Save join_control_node_certificate_key
+      ansible.builtin.set_fact:
+        control_node_join_cert_key: "{{ hostvars[groups['k8s_ha_control_node'][0]]['join_cert_key']['stdout_lines'][2] | trim }}"
+      when: kubernetes_role == 'first-control-node'
+      delegate_to: "{{ item }}"
+      delegate_facts: true
+      with_items: "{{ groups['k8s_ha_control_node'] }}"
+
+    - name: Set the kubeadm other control node join command 
+      ansible.builtin.set_fact:
+        kubernetes_control_node_join_command: >
+          {{ kubernetes_join_command_result.stdout }}
+          --apiserver-advertise-address {{ hostvars[item]['kubernetes_apiserver_advertise_address'] }}
+          {{ kubernetes_control_nodejoin_command_extra_opts }}
+          {{ control_node_join_cert_key }}
+      when: kubernetes_join_command_result.stdout is defined and kubernetes_role == 'first-control-node'
+      delegate_to: "{{ item }}"
+      delegate_facts: true
+      with_items: "{{ groups['k8s_ha_control_node'] }}"
+
+    - name: Print the init output to screen.
+      ansible.builtin.debug:
+        var: kubernetes_control_node_join_command
+      when: kubernetes_role == 'control-node' or kubernetes_role == 'first-control-node'
+
+    - include_tasks: kube-vip.yml
+
+    - include_tasks: other-control-node-setup.yml
+      when: kubernetes_role == 'control-node'
+
+  when: groups['k8s_ha_control_node'] | length > 1
+
+- name: Join not control plane nodes if set
+  block:
+    - name: Set the kubeadm node join command
+      ansible.builtin.set_fact:
+        kubernetes_node_join_command: >
+          {{ kubernetes_join_command_result.stdout }}
+          {{ hostvars[groups['k8s_ha_workers'][0]]['kubernetes_join_command_extra_opts'] }} 
+      when: kubernetes_join_command_result.stdout is defined
+      delegate_to: "{{ item }}"
+      delegate_facts: true
+      with_items: "{{ groups['k8s_not_control_nodes'] }}"
+
+    - name: Print the init output to screen.
+      ansible.builtin.debug:
+        var: kubernetes_node_join_command
+      when: kubernetes_role == 'node' 
+  
+    - include_tasks: node-setup.yml
+      when: kubernetes_role == 'node'
+
+  when: "{{ groups['k8s_not_control_nodes'] | length }} > 0"
+
+- name: Add taints to gw nodes (if configured).
+  kubernetes.core.k8s_taint:
+    state: present
+    name: "{{ node }}"
+    taints:
+    - effect: "{{ kubernetes_gw_taints.effect }}"
+      key: "{{ kubernetes_gw_taints.key }}"
+  loop: "{{ groups['k8s_ha_gateway'] }}"
+  loop_control:
+    loop_var: node
+  when: kubernetes_role == 'first-control-node' and groups['k8s_ha_gateway'] | length > 0
+
+- name: Add taints to worker nodes (if configured).
+  kubernetes.core.k8s_taint:
+    state: present
+    name: "{{ node }}"
+    taints:
+    - effect: "{{ kubernetes_worker_taints.effect }}"
+      key: "{{ kubernetes_gw_taints.key }}"
+  loop: "{{ groups['k8s_ha_workers'] }}"
+  loop_control:
+    loop_var: node
+  when: kubernetes_role == 'first-control-node' and groups['k8s_ha_workers'] | length > 0 and kubernetes_taint_worker | bool
+
+- name: Configure proper listen ip address for kube-prometheus-stack metrics
+  block:
+    - include_tasks: k8s_cp_bind_address_change.yml
+      loop: "{{ k8s_cp_manifest_file }}"
+      loop_control:
+        loop_var: k8s_manifests
+    
+    - name: Change metrics listen url in etcd manifest
+      ansible.builtin.lineinfile:
+        path: /etc/kubernetes/manifests/etcd.yaml
+        regexp: '(^\s*-\s--listen-metrics-urls\=\s*){{ item.search }}$'
+        line:  '\1{{ item.replace }}'
+        backrefs: yes
+      loop:
+      - { search: "http://127.0.0.1:2381", replace: "http://{{ ansible_host }}:2381" }
+
+    - include_tasks: k8s_cp_probes_address_changer.yml
+      loop: "{{ k8s_cp_manifest_file }}"
+      loop_control:
+        loop_var: k8s_manifests
+
+  when: inventory_hostname in groups['k8s_ha_control_node']

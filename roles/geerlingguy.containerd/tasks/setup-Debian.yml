@@ -1,0 +1,30 @@
+---
+- name: Ensure dependencies are installed.
+  ansible.builtin.package:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - gnupg2
+      - lsb-release
+      - curl
+    state: present
+
+- name: Add docker repository
+  block:
+    - name: Create dir for keyring
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download apt key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0744'
+
+    - name: Add containerd repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker

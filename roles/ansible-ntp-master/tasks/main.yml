@@ -1,0 +1,35 @@
+# tasks file for ntp
+---
+- name: install
+  apt:
+    name: "{{ ntp_dependencies }}"
+    state: "{{ apt_install_state | default('latest') }}"
+    update_cache: true
+    cache_valid_time: "{{ apt_update_cache_valid_time | default(3600) }}"
+  tags:
+    - configuration
+    - ntp
+    - ntp-install
+
+- name: update configuration file
+  template:
+    src: etc/ntp.conf.j2
+    dest: /etc/ntp.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart ntp
+  tags:
+    - configuration
+    - ntp
+    - ntp-configuration
+
+- name: start and enable service
+  service:
+    name: ntp
+    state: "{{ service_default_state | default('started') }}"
+    enabled: "{{ service_default_enabled | default(true) | bool }}"
+  tags:
+    - configuration
+    - ntp
+    - ntp-start-enable-service

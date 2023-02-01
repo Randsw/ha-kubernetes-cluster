@@ -1,0 +1,5 @@
+---
+kubernetes_gw_taints: 
+  key: node-role.kubernetes.io/gw
+  effect: NoSchedule
+haproxy_server: false

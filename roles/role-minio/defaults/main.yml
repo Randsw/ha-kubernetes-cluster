@@ -1,0 +1,6 @@
+---
+minio_mode: standalone # standalone or distributed
+rootUser: "minio"
+rootPassword: "minio"
+minio_ingress_host: minio.local
+minio_console_ingress_host: console.minio.local

@@ -1,0 +1,42 @@
+---
+- name: Add a repository
+  kubernetes.core.helm_repository:
+    name: minio
+    repo_url: https://charts.min.io/
+
+- name: Update helm repo
+  command: helm repo update
+
+- name: Deploy latest version of Metallb chart inside metallb-system namespace
+  kubernetes.core.helm:
+    name: minio
+    chart_ref: minio/minio
+    release_namespace: minio
+    create_namespace: true
+    wait: true
+    atomic: true
+    values:
+      mode: "{{ minio_mode }}"
+      replicas: 1
+      ingress:
+        enabled: true
+        ingressClassName: nginx
+        path: /
+        hosts:
+          - "{{ minio_ingress_host }}"
+      consoleIngress:
+        enabled: true
+        ingressClassName: nginx
+        path: /
+        hosts:
+          - "{{ minio_console_ingress_host }}"
+      metrics:
+      serviceMonitor:
+        enabled: true
+        public: true
+        additionalLabels:
+          release: "{{ prometheus_stack_release_name }}"
+        namespace: "{{ prometheus_stack_namespace }}"
+
+- name: Wait for minio pods become ready
+  shell: "kubectl wait --namespace=minio --for=condition=Ready --all pods --timeout=600s"

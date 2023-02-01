@@ -1,0 +1,28 @@
+---
+- name: Add a repository
+  kubernetes.core.helm_repository:
+    name: loki-stack
+    repo_url: https://grafana.github.io/helm-charts
+
+- name: Update helm repo
+  command: helm repo update
+
+- name: Deploy latest version of Metallb chart inside metallb-system namespace
+  kubernetes.core.helm:
+    name: logging
+    chart_ref: loki-stack/loki-stack
+    release_namespace: logging
+    create_namespace: true
+    wait: true
+    atomic: true
+    values:
+      promtail:
+        enabled: true
+        config:
+          clients:
+            - url: http://logging-loki:3100/loki/api/v1/push
+      fluent-bit:
+        enabled: false    
+
+- name: Wait for loki-stack pods become ready
+  shell: "kubectl wait --namespace=logging --for=condition=Ready --all pods --timeout=600s"

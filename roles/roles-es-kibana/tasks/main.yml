@@ -1,0 +1,98 @@
+
+---
+- name: Add a repository
+  kubernetes.core.helm_repository:
+    name: elastic
+    repo_url: https://helm.elastic.co
+
+- name: Update helm repo
+  command: helm repo update
+
+- name: Deploy latest version of Metallb chart inside metallb-system namespace
+  kubernetes.core.helm:
+    name: elastic
+    chart_ref: elastic/eck-operator
+    release_namespace: elastic
+    create_namespace: true
+    wait: true
+    atomic: true
+    values:
+      config:
+        metricsPort: "7777"
+      podMonitor:
+        enabled: true
+        labels:
+          release: "{{ prometheus_stack_release_name }}"
+          app: kube-prometheus-stack
+        namespace: "{{ prometheus_stack_namespace }}"
+
+- name: Wait for elastic pods become ready
+  shell: "kubectl wait --namespace=elastic --for=condition=Ready --all pods --timeout=600s"
+
+- name: Create Elasticsearch
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: elasticsearch.k8s.elastic.co/v1
+      kind: Elasticsearch
+      metadata:
+        name: elasticsearch
+        namespace: elastic
+      spec:
+        version: 8.6.1
+        nodeSets:
+        - name: default
+          count: 1
+          config:
+            node.master: true
+            node.data: true
+            node.ingest: true
+            node.store.allow_mmap: false
+
+- name: Create Kibana
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: kibana.k8s.elastic.co/v1
+      kind: Kibana
+      metadata:
+        name: kibana
+        namespace: elastic
+      spec:
+        version: 8.6.1
+        count: 1
+        http:
+          service:
+            spec:
+              type: ClusterIP
+          tls:
+            selfSignedCertificate:
+              disabled: true    
+        elasticsearchRef:
+          name: elasticsearch
+          namespace: elastic
+
+- name: Wait for elastic pods become ready
+  shell: "kubectl wait --namespace=elastic --for=condition=Ready --all pods --timeout=600s"
+
+- name: Create Ingress for Kibana
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: kibana-ingress
+      spec:
+        ingressClassName: nginx
+        rules:
+          - host: "{{ kibana_ingress_host }}"
+            http:
+              paths:
+                - pathType: Prefix
+                  path: "/"
+                  backend:
+                    service:
+                      name: kibana-kb-http
+                      port:
+                        number: 5601

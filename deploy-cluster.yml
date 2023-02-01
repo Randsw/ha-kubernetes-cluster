@@ -1,0 +1,132 @@
+- hosts: localhost
+  become: no
+  gather_facts: no
+
+  tasks: 
+    - name: Delete VM ssh fingerprint
+      become: false
+      shell: "ssh-keygen -f ~/.ssh/known_hosts -R {{ hostvars[item]['ansible_host'] }}"
+      register: known_hosts_delete
+      changed_when: "'updated' in known_hosts_delete.stdout"
+      loop: "{{ groups['k8s_cluster'] }}"
+
+    - name: Accept server SSH host keys
+      become: false
+      shell: |
+        ssh-keyscan -H {{ hostvars[item]['ansible_host'] }} >> ~/.ssh/known_hosts
+      register: known_hosts_script
+      until: known_hosts_script.rc == 0
+      retries: 5
+      delay: 1
+      changed_when: known_hosts_script.rc != 0
+      loop: "{{ groups['k8s_cluster'] }}"
+    
+    - name: Create dir for kubeconfig
+      file:
+        path: ~/.kube
+        state: directory
+
+- hosts: k8s_cluster
+  become: yes
+  gather_facts: yes
+
+  vars_files:
+    - ansible_executor_become_pass.yml 
+
+  vars:
+    become_pass: '{{ ansible_executor_become_pass }}'
+
+  pre_tasks:
+    - name: Disable cloud-init
+      ansible.builtin.lineinfile:
+        path: /etc/cloud/cloud-init.disabled
+        line: cloud-init=disabled
+        create: yes
+        state: present
+
+    - name: Print ip address of VW
+      ansible.builtin.debug:
+        var:  hostvars[item]['ansible_eth1']['ipv4']['address']
+      loop: "{{ groups['all'] }}"
+  
+    - name: Run the equivalent of "apt-get update" as a separate step
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Find timezone
+      ansible.builtin.command: timedatectl 
+      register: timedate_output
+      changed_when: false
+
+    - name: Set time zone
+      ansible.builtin.command: timedatectl set-timezone Europe/Moscow
+      when: '"Moscow" not in timedate_output.stdout'
+
+    - name: Fill /etc/hosts with hosts entry
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ hostvars[item]['ansible_host'] }}  {{ item }}"
+      loop: "{{ groups['k8s_ha_cluster'] }}"
+
+    - name: Add VIP entry in /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ k8s_cp }} k8s-cp"
+
+    - name: Install nessesary package
+      block:
+        - name: Install pip
+          ansible.builtin.package:
+            name: python3-pip
+            state: present
+            update_cache: yes
+
+        - name: Install jq
+          ansible.builtin.package:
+            name: jq
+            state: present
+
+        - name: Install openshift
+          ansible.builtin.pip:
+            name: "{{ item }}"
+          loop:
+            - kubernetes-validate
+            - openshift
+      when: kubernetes_role == 'first-control-node'
+
+  tasks:
+    - name: Configure ntp server (if cluster more when one node)
+      ansible.builtin.import_role:
+        name: ansible-ntp-master
+      when: groups['k8s_cluster'] | length  > 1
+
+    - name: Set up Haproxy on gateway (if set)
+      ansible.builtin.import_role:
+        name: geerlingguy.haproxy
+      when: haproxy_server
+
+    - name: Install containerd
+      ansible.builtin.import_role:
+        name: geerlingguy.containerd
+    
+    - name: Create kubernetes cluster
+      ansible.builtin.import_role:
+        name: role-kubernetes
+
+    # - name: Install Helm on first control node
+    #   ansible.builtin.import_role:
+    #       name: role-helm
+    #   when: kubernetes_role == 'first-control-node'
+
+# - hosts: k8s_cluster
+#   become: no
+#   gather_facts: no
+
+  # roles:
+  #   - { role: role-metallb, when: kubernetes_role == 'first-master' and enable_metallb}
+  #   - { role: role-local-path-provisioner, when: kubernetes_role == 'first-master' and enable_metallb}
+  #   - { role: role-prometheus-stack, when: kubernetes_role == 'first-control-node' }
+  #   - { role: role-ingress, when: kubernetes_role == 'first-control-node'}
+  #   - { role: role-loki-stack, when: kubernetes_role == 'first-control-node'}
+  #   - { role: role-minio, when: kubernetes_role == 'first-control-node'}
+  #   - { role: role-es-kibana, when: kubernetes_role == 'first-control-node'}

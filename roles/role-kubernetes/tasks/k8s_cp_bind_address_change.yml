@@ -1,0 +1,9 @@
+---
+- name: Change bind address in {{ k8s_manifests }}
+  ansible.builtin.lineinfile:
+    path: "{{ k8s_manifests }}"
+    regexp: '(^\s*-\s--bind-address\=\s*){{ item.search }}$'
+    line:  '\g<1>{{ item.replace }}'
+    backrefs: yes
+  loop:
+  - { search: "127.0.0.1", replace: "{{ ansible_host }}" }

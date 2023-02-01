@@ -1,0 +1,46 @@
+# defaults file for ntp
+---
+ntp_driftfile: /var/lib/ntp/ntp.drift
+
+# Enable this if you want statistics to be logged (must not end with a slash)
+ntp_statsdir: false
+
+ntp_statistics:
+  - loopstats
+  - peerstats
+  - clockstats
+
+ntp_filegens:
+  - 'loopstats file loopstats type day enable'
+  - 'peerstats file peerstats type day enable'
+  - 'clockstats file clockstats type day enable'
+
+ntp_servers:
+  # Use servers from the NTP Pool Project. Approved by Ubuntu Technical Board
+  # on 2011-02-08 (LP: #104525). See http://www.pool.ntp.org/join.html for
+  # more information.
+
+ - 0.ubuntu.pool.ntp.org
+ - 1.ubuntu.pool.ntp.org
+ - 2.ubuntu.pool.ntp.org
+ - 3.ubuntu.pool.ntp.org
+
+ # Use Ubuntu's ntp server as a fallback.
+ - ntp.ubuntu.com
+
+ntp_restricts:
+  - '-4 default nomodify nopeer noquery notrap'
+  - '-6 default nomodify nopeer noquery notrap'
+
+  # Local users may interrogate the ntp server more closely.
+  - '127.0.0.1'
+  - '::1'
+
+ntp_enables: []
+
+ntp_disables:
+ - monitor
+
+ntp_broadcast: false
+
+ntp_broadcastclient: false

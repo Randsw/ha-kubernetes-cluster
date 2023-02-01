@@ -1,0 +1,5 @@
+---
+kubernetes_worker_taints:
+  key: node-role.kubernetes.io/worker
+  effect: NoSchedule
+haproxy_server: false

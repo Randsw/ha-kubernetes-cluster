@@ -1,0 +1,20 @@
+---
+- name: Join other master to Kubernetes master
+  ansible.builtin.shell: >
+    {{ kubernetes_control_node_join_command }}
+    creates=/etc/kubernetes/kubelet.conf
+  tags: ['skip_ansible_lint']
+  throttle: 1  
+
+- name: Ensure .kube directory exists.
+  ansible.builtin.file:
+    path: ~/.kube
+    state: directory
+    mode: 0755
+
+- name: Symlink the kubectl admin.conf to ~/.kube/conf.
+  ansible.builtin.file:
+    src: /etc/kubernetes/admin.conf
+    dest: ~/.kube/config
+    state: link
+    mode: 0644

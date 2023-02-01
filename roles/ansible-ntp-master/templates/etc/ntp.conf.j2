@@ -1,0 +1,47 @@
+# {{ ansible_managed }}
+
+# /etc/ntp.conf, configuration for ntpd; see ntp.conf(5) for help
+
+driftfile {{ ntp_driftfile }}
+
+{% if ntp_statsdir %}
+statsdir {{ ntp_statsdir }}
+{% endif %}
+
+statistics {{ ntp_statistics | join(' ') }}
+{% for ntp_filegen in ntp_filegens %}
+filegen {{ ntp_filegen }}
+{% endfor %}
+
+# Specify one or more NTP servers.
+
+{% for ntp_server in ntp_servers %}
+server {{ ntp_server }}
+{% endfor %}
+
+# Access control configuration; see /usr/share/doc/ntp-doc/html/accopt.html for
+# details.  The web page <http://support.ntp.org/bin/view/Support/AccessRestrictions>
+# might also be helpful.
+#
+# Note that "restrict" applies to both servers and clients, so a configuration
+# that might be intended to block requests from certain clients could also end
+# up blocking replies from your own upstream servers.
+
+{% for ntp_restrict in ntp_restricts %}
+restrict {{ ntp_restrict }}
+{% endfor %}
+
+{% for ntp_enable in ntp_enables %}
+enable {{ ntp_enable }}
+{% endfor %}
+{% for ntp_disable in ntp_disables %}
+disable {{ ntp_disable }}
+{% endfor %}
+
+{% if ntp_broadcast %}
+broadcast {{ ntp_broadcast }}
+{% endif %}
+
+{% if ntp_broadcastclient %}
+broadcastclient
+{% endif %}

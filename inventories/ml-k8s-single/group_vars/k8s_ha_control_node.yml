@@ -1,0 +1,4 @@
+---
+kubernetes_role: control-node
+kubernetes_control_node_join_command_extra_opts: "--cri-socket  unix:///run/containerd/containerd.sock --control-plane --certificate-key "
+haproxy_server: false

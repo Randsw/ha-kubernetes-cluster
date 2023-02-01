@@ -1,0 +1,4 @@
+controller_kind: Deployment
+prometheus_stack_release_name: monitoring
+prometheus_stack_namespace: monitoring
+fluentbit_parser: "nginx_custom"

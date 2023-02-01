@@ -1,0 +1,38 @@
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+kubernetesVersion: v1.26.1
+apiServer:
+  certSANs:
+{% for adr in kubernetes_apiserver_certSANs %}
+  - {{ adr }}
+{% endfor %}
+  extraArgs:
+    enable-admission-plugins: NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota
+    authorization-mode: Node,RBAC
+clusterName: {{ kubernetes_cluster_name }}
+controlPlaneEndpoint: {{kube_vip_address}}:{{ k8s_cp_port }}
+networking:
+  podSubnet: {{ kubernetes_pod_network.cidr }}
+  dnsDomain: {{ kubernetes_cluster_domain_name}}
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: {{ kubernetes_kubeproxy_mode }}
+ipvs:
+  strictARP: true
+metricsBindAddress: 0.0.0.0
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+nodeRegistration:
+  criSocket: "{{ kubernetes_cri_socket }}"
+  kubeletExtraArgs:
+    cgroup-driver: "{{ kubernetes_cgroupDriver }}"
+localAPIEndpoint:
+  advertiseAddress: {{ kubernetes_apiserver_advertise_address | default(ansible_default_ipv4.address, true) }}
+  bindPort: 6443
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+cgroupDriver: {{ kubernetes_cgroupDriver }}
+

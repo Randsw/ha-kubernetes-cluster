@@ -1,0 +1,13 @@
+---
+- name: Change liveness and startup probes address in {{ k8s_manifests }}
+  ansible.builtin.lineinfile:
+    path: "{{ k8s_manifests }}"
+    regexp: '(^\s*host:\s*){{ item.search }}$'
+    line:  '\g<1>{{ item.replace }}'
+    backrefs: yes
+  loop:
+  - { search: "127.0.0.1", replace: "{{ ansible_host }}" }
+  register: result
+  until: result.changed == false
+  retries: 10
+  delay: 1
