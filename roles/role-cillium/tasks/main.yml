@@ -1,0 +1,21 @@
+---
+- name: Add stable chart repo
+  kubernetes.core.helm_repository:
+    name: cilium
+    repo_url: "https://helm.cilium.io"
+
+- name: Update helm repo
+  ansible.builtin.command: helm repo update
+
+- name: Deploy latest version of cillium chart inside kube-system namespace with values
+  kubernetes.core.helm:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    name: cilium
+    chart_ref: cilium/cilium
+    release_namespace: kube-system
+    values:
+      ipam:
+        mode: kubernetes
+
+- name: Wait for cillium pods become ready
+  shell: "kubectl wait --namespace=kube-system --for=condition=Ready --all pods --timeout=600s"

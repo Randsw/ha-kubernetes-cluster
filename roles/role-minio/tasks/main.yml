@@ -9,6 +9,7 @@
 
 - name: Deploy latest version of Metallb chart inside metallb-system namespace
   kubernetes.core.helm:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     name: minio
     chart_ref: minio/minio
     release_namespace: minio

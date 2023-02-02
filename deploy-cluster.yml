@@ -66,7 +66,7 @@
       ansible.builtin.lineinfile:
         path: /etc/hosts
         line: "{{ hostvars[item]['ansible_host'] }}  {{ item }}"
-      loop: "{{ groups['k8s_ha_cluster'] }}"
+      loop: "{{ groups['k8s_cluster'] }}"
 
     - name: Add VIP entry in /etc/hosts
       ansible.builtin.lineinfile:
@@ -86,12 +86,13 @@
             name: jq
             state: present
 
-        - name: Install openshift
+        - name: Install kubernetes SDK
           ansible.builtin.pip:
             name: "{{ item }}"
           loop:
-            - kubernetes-validate
-            - openshift
+            - kubernetes
+            - PyYAML
+            - jsonpatch
       when: kubernetes_role == 'first-control-node'
 
   tasks:
@@ -113,20 +114,53 @@
       ansible.builtin.import_role:
         name: role-kubernetes
 
-    # - name: Install Helm on first control node
-    #   ansible.builtin.import_role:
-    #       name: role-helm
-    #   when: kubernetes_role == 'first-control-node'
+    - name: Install Helm on first control node
+      ansible.builtin.import_role:
+          name: role-helm
+      when: kubernetes_role == 'first-control-node'
 
-# - hosts: k8s_cluster
-#   become: no
-#   gather_facts: no
+#Deploy infastructure component with helm
+- hosts: k8s_cluster
+  become: false
+  gather_facts: false
 
-  # roles:
-  #   - { role: role-metallb, when: kubernetes_role == 'first-master' and enable_metallb}
-  #   - { role: role-local-path-provisioner, when: kubernetes_role == 'first-master' and enable_metallb}
-  #   - { role: role-prometheus-stack, when: kubernetes_role == 'first-control-node' }
-  #   - { role: role-ingress, when: kubernetes_role == 'first-control-node'}
-  #   - { role: role-loki-stack, when: kubernetes_role == 'first-control-node'}
-  #   - { role: role-minio, when: kubernetes_role == 'first-control-node'}
-  #   - { role: role-es-kibana, when: kubernetes_role == 'first-control-node'}
+  tasks:
+    - name: Set up Cillium if set
+      ansible.builtin.import_role:
+        name: role-cillium
+      when: cni_type == "cillium" and kubernetes_role == 'first-control-node'
+
+#     - name: Set up Metallb if set
+#       ansible.builtin.import_role:
+#         name: role-metallb
+#       when: enable_metallb and kubernetes_role == 'first-control-node'
+
+#     - name: Set up kube-prometheus-stack
+#       ansible.builtin.import_role:
+#         name: role-prometheus-stack
+#       when: kubernetes_role == 'first-control-node'
+
+#     - name: Set up Nginx ingress
+#       ansible.builtin.import_role:
+#         name: role-ingress
+#       when: kubernetes_role == 'first-control-node'
+    
+#     - name: Set up local-path-provisioner
+#       ansible.builtin.import_role:
+#         name: role-local-path-provisioner
+#       when: kubernetes_role == 'first-control-node'
+
+#     - name: Set up loki-stack
+#       ansible.builtin.import_role:
+#         name: role-local-path-provisioner
+#       when: kubernetes_role == 'first-control-node'
+
+#     - name: Set up minio
+#       ansible.builtin.import_role:
+#         name: role-minio
+#       when: kubernetes_role == 'first-control-node'
+
+#     - name: Set up elasticsearch and kibana
+#       ansible.builtin.import_role:
+#         name: roles-es-kibana
+#       when: kubernetes_role == 'first-control-node'

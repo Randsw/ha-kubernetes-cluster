@@ -9,6 +9,7 @@
 
 - name: Deploy latest version of Metallb chart inside metallb-system namespace
   kubernetes.core.helm:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     name: metallb
     chart_ref: metallb/metallb
     release_namespace: metallb-system
@@ -33,6 +34,7 @@
 
 - name: Label metallb namespace
   kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     state: patched
     kind: Namespace
     name: metallb-system
@@ -48,6 +50,7 @@
 
 - name: Configure metallb address pool
   kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     state: present
     definition:
       apiVersion: metallb.io/v1beta1
@@ -61,6 +64,7 @@
 
 - name: Assosiate L2Advertisement with IPAddressPool
   kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     state: present
     definition:
       apiVersion: metallb.io/v1beta1

@@ -1,57 +1,57 @@
----
-- name: Include OS-specific variables.
-  include_vars: "{{ ansible_os_family }}.yml"
+# ---
+# - name: Include OS-specific variables.
+#   include_vars: "{{ ansible_os_family }}.yml"
 
-- include_tasks: setup-RedHat.yml
-  when: ansible_os_family == 'RedHat'
+# - include_tasks: setup-RedHat.yml
+#   when: ansible_os_family == 'RedHat'
 
-- include_tasks: setup-Debian.yml
-  when: ansible_os_family == 'Debian'
+# - include_tasks: setup-Debian.yml
+#   when: ansible_os_family == 'Debian'
 
-- name: Ensure dependencies are installed.
-  ansible.builtin.package: 
-    name: curl 
-    state: present
+# - name: Ensure dependencies are installed.
+#   ansible.builtin.package: 
+#     name: curl 
+#     state: present
 
-- name: Disable swap
-  ansible.builtin.command: swapoff -a
-  when: ansible_swaptotal_mb > 0
+# - name: Disable swap
+#   ansible.builtin.command: swapoff -a
+#   when: ansible_swaptotal_mb > 0
 
-- name: Remowe swap from /etc/fstab
-  ansible.builtin.lineinfile:
-    path: '/etc/fstab'
-    regexp: '\sswap\s'
-    state: absent
+# - name: Remowe swap from /etc/fstab
+#   ansible.builtin.lineinfile:
+#     path: '/etc/fstab'
+#     regexp: '\sswap\s'
+#     state: absent
 
-- name: Install Kubernetes packages.
-  ansible.builtin.package:
-    name: "{{ item.name | default(item) }}"
-    state: "{{ item.state | default('present') }}"
-  notify: restart kubelet
-  with_items: "{{ kubernetes_packages }}"
+# - name: Install Kubernetes packages.
+#   ansible.builtin.package:
+#     name: "{{ item.name | default(item) }}"
+#     state: "{{ item.state | default('present') }}"
+#   notify: restart kubelet
+#   with_items: "{{ kubernetes_packages }}"
 
-- include_tasks: sysctl-setup.yml
+# - include_tasks: sysctl-setup.yml
 
-- include_tasks: kubelet-setup.yml
+# - include_tasks: kubelet-setup.yml
 
-- name: Ensure kubelet is started and enabled at boot.
-  ansible.builtin.service:
-    name: kubelet
-    state: started
-    enabled: true
+# - name: Ensure kubelet is started and enabled at boot.
+#   ansible.builtin.service:
+#     name: kubelet
+#     state: started
+#     enabled: true
 
-- name: Check if Kubernetes has already been initialized.
-  ansible.builtin.stat:
-    path: /etc/kubernetes/admin.conf
-  register: kubernetes_init_stat
+# - name: Check if Kubernetes has already been initialized.
+#   ansible.builtin.stat:
+#     path: /etc/kubernetes/admin.conf
+#   register: kubernetes_init_stat
 
-- name: Reset Old Cluster on all nodes
-  ansible.builtin.command: kubeadm reset --force
-  when: kubernetes_init_stat.stat.exists
+# - name: Reset Old Cluster on all nodes
+#   ansible.builtin.command: kubeadm reset --force
+#   when: kubernetes_init_stat.stat.exists
 
-# Add kube-vip static pod
-- include_tasks: kube-vip.yml
-  when: kubernetes_role == 'first-control-node' and groups['k8s_ha_control_node'] | length > 1
+# # Add kube-vip static pod
+# - include_tasks: kube-vip.yml
+#   when: kubernetes_role == 'first-control-node' and groups['k8s_ha_control_node'] | length > 1
 
 # Set up first control node.
 - include_tasks: control-node-setup.yml
@@ -118,7 +118,7 @@
     - include_tasks: node-setup.yml
       when: kubernetes_role == 'node'
 
-  when: "{{ groups['k8s_not_control_nodes'] | length }} > 0"
+  when: groups['k8s_not_control_nodes'] | length > 0
 
 - name: Add taints to gw nodes (if configured).
   kubernetes.core.k8s_taint:
@@ -127,22 +127,10 @@
     taints:
     - effect: "{{ kubernetes_gw_taints.effect }}"
       key: "{{ kubernetes_gw_taints.key }}"
-  loop: "{{ groups['k8s_ha_gateway'] }}"
+  loop: "{{ groups['k8s_gateway'] }}"
   loop_control:
     loop_var: node
-  when: kubernetes_role == 'first-control-node' and groups['k8s_ha_gateway'] | length > 0
-
-- name: Add taints to worker nodes (if configured).
-  kubernetes.core.k8s_taint:
-    state: present
-    name: "{{ node }}"
-    taints:
-    - effect: "{{ kubernetes_worker_taints.effect }}"
-      key: "{{ kubernetes_gw_taints.key }}"
-  loop: "{{ groups['k8s_ha_workers'] }}"
-  loop_control:
-    loop_var: node
-  when: kubernetes_role == 'first-control-node' and groups['k8s_ha_workers'] | length > 0 and kubernetes_taint_worker | bool
+  when: kubernetes_role == 'first-control-node' and groups['k8s_gateways'] | length > 0
 
 - name: Configure proper listen ip address for kube-prometheus-stack metrics
   block:

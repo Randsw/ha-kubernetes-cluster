@@ -35,5 +35,14 @@
   notify: restart containerd
   when: containerd_config_default_write
 
+- name: Set systemd cgroup
+  ansible.builtin.lineinfile:
+    path: /etc/containerd/config.toml
+    regexp: '(^\s*SystemdCgroup\s=\s){{ item.search }}'
+    line:  '\1{{ item.replace }}'
+    backrefs: yes
+  loop:
+  - { search: "false", replace: "true" }
+
 - name: Ensure containerd is restarted immediately if necessary.
   meta: flush_handlers

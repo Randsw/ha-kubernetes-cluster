@@ -11,88 +11,80 @@
   register: ansible_host_username
   changed_when: false
 
-# Use kubeadm config file to cluster setup
-- name: Copy kubeadm config file to ansible host
-  ansible.builtin.template:
-    src: "cluster-config.yml.j2"
-    dest: "/home/{{ ansible_host_username.stdout }}/cluster-config.yml"
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-    mode: 0555
+# # Use kubeadm config file to cluster setup
+# - name: Copy kubeadm config file to ansible host
+#   ansible.builtin.template:
+#     src: "cluster-config.yml.j2"
+#     dest: "/home/{{ ansible_host_username.stdout }}/cluster-config.yml"
+#     owner: "{{ ansible_user }}"
+#     group: "{{ ansible_user }}"
+#     mode: 0555
 
-- name: Initialize Kubernetes master with kubeadm init using config file
-  ansible.builtin.command: "kubeadm init --config /home/{{ ansible_host_username.stdout }}/cluster-config.yml" 
-  register: kubeadmin_init
-  when: not kubernetes_init_stat.stat.exists
+# - name: Initialize Kubernetes master with kubeadm init using config file
+#   ansible.builtin.command: "kubeadm init --config /home/{{ ansible_host_username.stdout }}/cluster-config.yml" 
+#   register: kubeadmin_init
+#   when: not kubernetes_init_stat.stat.exists
 
-- name: Print the init output to screen.
-  ansible.builtin.debug:
-    var: kubeadmin_init.stdout_lines
-  when: not kubernetes_init_stat.stat.exists
+# - name: Print the init output to screen.
+#   ansible.builtin.debug:
+#     var: kubeadmin_init.stdout_lines
+#   when: not kubernetes_init_stat.stat.exists
 
-- name: Ensure .kube directory exists.
-  become: false
-  ansible.builtin.file:
-    path: "/home/{{ ansible_user }}/.kube"
-    state: directory
-    mode: 0755
-
-- name: Symlink the kubectl admin.conf to /home/{{ ansible_user }}/.kube/config
-  ansible.builtin.file:
-    src: /etc/kubernetes/admin.conf
-    dest: "/home/{{ ansible_host_username.stdout }}/.kube/config"
-    state: link
-    mode: 0644
-
-- name: Get kubernetes config file to ansible executor
-  ansible.builtin.fetch:
-    src: "/etc/kubernetes/admin.conf"
-    dest: "/home/{{ playbook_executor_username.stdout }}/.kube/"
-    flat: yes
-
-- name: Change k8s VIP port to k8s apiserver standart port. Access from ansible executor throuht gateway1 on port 6443
-  become: false
-  ansible.builtin.lineinfile:
-    path: "/home/{{ playbook_executor_username.stdout }}/.kube/admin.conf"
-    regexp: '(^\s*server:\s*){{ item.search }}$'
-    line:  '\1{{ item.replace }}'
-    backrefs: yes
-  loop:
-    - { search: 'https://k8s-cp:{{ k8s_cp_port }}', replace: 'https://k8s-cp:6443' }
-  delegate_to: localhost
-
-- name: Install Calico CNI
-  block:
-    - name: Download Calico manifest to the cluster.
-      ansible.builtin.get_url:
-        url: "{{ kubernetes_calico_manifest_file }}"
-        dest: /home/{{ ansible_host_username.stdout }}/calico.yml
-        mode: '0664'
-
-    - name: Apply Calico manifest to the cluster.
-      kubernetes.core.k8s:
-        state: present
-        src: /home/{{ ansible_host_username.stdout }}/calico.yml
-      register: calico_result
-      changed_when: calico_result.result.status is defined
-  when: kubernetes_pod_network.cni == 'calico'
-
-# - name: Configure Cillium networking
+# - name: Ensure .kube directory exists.
 #   become: false
-#   ansible.builtin.command: "{{ item }}"
-#   loop:
-#     - "kubectl apply -f {{ cillium_manifest_file }}"
-#   register: cillium_result
-#   changed_when: "'created' in cillium_result"
-#   when: kubernetes_pod_network.cni == 'cillium' 
+#   ansible.builtin.file:
+#     path: "/home/{{ ansible_user }}/.kube"
+#     state: directory
+#     mode: 0755
 
-- name: Allow pods on master node (if configured).
+# - name: Symlink the kubectl admin.conf to /home/{{ ansible_user }}/.kube/config
+#   ansible.builtin.file:
+#     src: /etc/kubernetes/admin.conf
+#     dest: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+#     state: link
+#     mode: 0644
+
+# - name: Get kubernetes config file to ansible executor
+#   ansible.builtin.fetch:
+#     src: "/etc/kubernetes/admin.conf"
+#     dest: "/home/{{ playbook_executor_username.stdout }}/.kube/"
+#     flat: yes
+
+# - name: Change k8s VIP port to k8s apiserver standart port. Access from ansible executor throuht gateway1 on port 6443
+#   become: false
+#   ansible.builtin.lineinfile:
+#     path: "/home/{{ playbook_executor_username.stdout }}/.kube/admin.conf"
+#     regexp: '(^\s*server:\s*){{ item.search }}$'
+#     line:  '\1{{ item.replace }}'
+#     backrefs: yes
+#   loop:
+#     - { search: 'https://k8s-cp:{{ k8s_cp_port }}', replace: 'https://k8s-cp:6443' }
+#   delegate_to: localhost
+
+# - name: Install Calico CNI
+#   block:
+#     - name: Download Calico manifest to the cluster.
+#       ansible.builtin.get_url:
+#         url: "{{ kubernetes_calico_manifest_file }}"
+#         dest: /home/{{ ansible_host_username.stdout }}/calico.yml
+#         mode: '0664'
+
+#     - name: Apply Calico manifest to the cluster.
+#       kubernetes.core.k8s:
+#         state: present
+#         src: /home/{{ ansible_host_username.stdout }}/calico.yml
+#       register: calico_result
+#       changed_when: calico_result.result.status is defined
+#   when: cni_type == 'calico'
+
+- name: Allow pods on control node (if configured).
   kubernetes.core.k8s_taint:
     state: absent
-    name: k8s-1
+    name: "{{ groups['k8s_ha_control_node'][0] }}"
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     taints:
-    - effect: NoExecute
-      key: "node-role.kubernetes.io/master"
+    - effect: NoSchedule
+      key: "node-role.kubernetes.io/control-plane"
   when:
     - kubernetes_allow_pods_on_control_node | bool
 
@@ -127,9 +119,22 @@
   retries: 10
   delay: 10
 
-- name: Wait for service pods become ready
-  become: false
-  ansible.builtin.command: "kubectl wait --namespace=kube-system --for=condition=Ready --all pods --timeout=600s"
+- name: Wait till the control-plane is created
+  kubernetes.core.k8s_info:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    kind: Pod
+    wait: yes
+    name: "{{ item }}-{{ inventory_hostname }}"
+    namespace: kube-system
+    wait_sleep: 10
+    wait_timeout: 360
+    wait_condition:
+      type: Ready
+  loop:
+    - etcd
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
 
 - name: Generate kubernetes core certificates
   ansible.builtin.command: "kubeadm init phase upload-certs --upload-certs " 

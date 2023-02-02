@@ -10,6 +10,7 @@
 
 - name: Deploy latest version of Metallb chart inside metallb-system namespace
   kubernetes.core.helm:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     name: elastic
     chart_ref: elastic/eck-operator
     release_namespace: elastic
@@ -31,6 +32,7 @@
 
 - name: Create Elasticsearch
   kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     state: present
     definition:
       apiVersion: elasticsearch.k8s.elastic.co/v1
@@ -51,6 +53,7 @@
 
 - name: Create Kibana
   kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     state: present
     definition:
       apiVersion: kibana.k8s.elastic.co/v1
@@ -77,6 +80,7 @@
 
 - name: Create Ingress for Kibana
   kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     state: present
     definition:
       apiVersion: networking.k8s.io/v1

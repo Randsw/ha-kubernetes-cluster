@@ -1,5 +1,6 @@
 ---
 enable_metallb: false
+cni_type: cillium
 ansible_python_interpreter: /usr/bin/python3
 become_pass: "{{ ansible_executor_become_pass }}"
 k8s_cp: "192.168.116.171"
