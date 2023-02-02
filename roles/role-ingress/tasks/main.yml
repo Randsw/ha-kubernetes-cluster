@@ -18,6 +18,7 @@
     values:
       controller:
         kind: Deployment
+        hostNetwork: true
         podAnnotations:
           fluentbit.io/parser: "{{ fluentbit_parser }}"
         metrics:
@@ -66,7 +67,7 @@
                 annotations:
                   description: Too many 4XXs
                   summary: More than 5% of all requests returned 4XX, this requires your attention
-  when: groups['k8s_ha_gateway'] | length == 0 
+  when: groups['k8s_gateways'] | length == 0 
 
 
 - name: Deploy ingress nginx chart inside ingress-nginx namespace with values when Gateway nodes exist
@@ -136,7 +137,7 @@
                 annotations:
                   description: Too many 4XXs
                   summary: More than 5% of all requests returned 4XX, this requires your attention
-  when: groups['k8s_ha_gateway'] | length > 0
+  when: groups['k8s_gateways'] | length > 0
 
 - name: Add NGINX ingress grafana dashboard
   kubernetes.core.k8s:

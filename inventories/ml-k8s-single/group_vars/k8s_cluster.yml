@@ -3,9 +3,9 @@ enable_metallb: false
 cni_type: cillium
 ansible_python_interpreter: /usr/bin/python3
 become_pass: "{{ ansible_executor_become_pass }}"
-k8s_cp: "192.168.116.171"
+k8s_cp: "192.168.0.171"
 k8s_cp_port: 6443
 vip_eth_interface: eth1
-kube_vip_address: "192.168.116.171"
+kube_vip_address: "192.168.0.171"
 
 kubernetes_kubeadm_init_extra_opts: "--cri-socket  unix:///run/containerd/containerd.sock"

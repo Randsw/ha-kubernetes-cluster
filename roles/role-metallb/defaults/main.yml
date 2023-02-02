@@ -1,1 +1,1 @@
-metallb_address_pool: "192.168.116.200-192.168.116.210"
+metallb_address_pool: "192.168.0.200-192.168.0.200"

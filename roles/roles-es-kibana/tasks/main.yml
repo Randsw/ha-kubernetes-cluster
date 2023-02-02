@@ -2,17 +2,17 @@
 ---
 - name: Add a repository
   kubernetes.core.helm_repository:
-    name: elastic
-    repo_url: https://helm.elastic.co
+    name: elastic-mirror
+    repo_url: https://charts.softonic.io
 
 - name: Update helm repo
   command: helm repo update
 
-- name: Deploy latest version of Metallb chart inside metallb-system namespace
+- name: Deploy latest version of ECK chart inside elastic namespace
   kubernetes.core.helm:
     kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     name: elastic
-    chart_ref: elastic/eck-operator
+    chart_ref: elastic-mirror/eck-operator
     release_namespace: elastic
     create_namespace: true
     wait: true
@@ -46,9 +46,7 @@
         - name: default
           count: 1
           config:
-            node.master: true
-            node.data: true
-            node.ingest: true
+            node.roles: [ data, master, ingest ]
             node.store.allow_mmap: false
 
 - name: Create Kibana
@@ -87,6 +85,7 @@
       kind: Ingress
       metadata:
         name: kibana-ingress
+        namespace: elastic
       spec:
         ingressClassName: nginx
         rules:

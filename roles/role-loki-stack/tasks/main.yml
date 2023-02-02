@@ -7,7 +7,7 @@
 - name: Update helm repo
   command: helm repo update
 
-- name: Deploy latest version of Metallb chart inside metallb-system namespace
+- name: Deploy latest version of Loki-stack chart inside loki-stack namespace
   kubernetes.core.helm:
     kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     name: logging

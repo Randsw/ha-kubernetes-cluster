@@ -7,7 +7,7 @@
 - name: Update helm repo
   command: helm repo update
 
-- name: Deploy latest version of Metallb chart inside metallb-system namespace
+- name: Deploy latest version of Minio chart inside Minio namespace
   kubernetes.core.helm:
     kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     name: minio
@@ -18,7 +18,12 @@
     atomic: true
     values:
       mode: "{{ minio_mode }}"
+      rootUser: "{{ rootUser }}"
+      rootPassword: "{{ rootPassword }}"
       replicas: 1
+      resources:
+        requests:
+          memory: 1Gi
       ingress:
         enabled: true
         ingressClassName: nginx
@@ -32,12 +37,12 @@
         hosts:
           - "{{ minio_console_ingress_host }}"
       metrics:
-      serviceMonitor:
-        enabled: true
-        public: true
-        additionalLabels:
-          release: "{{ prometheus_stack_release_name }}"
-        namespace: "{{ prometheus_stack_namespace }}"
+        serviceMonitor:
+          enabled: true
+          public: true
+          additionalLabels:
+            release: "{{ prometheus_stack_release_name }}"
+          namespace: "{{ prometheus_stack_namespace }}"
 
 - name: Wait for minio pods become ready
   shell: "kubectl wait --namespace=minio --for=condition=Ready --all pods --timeout=600s"
