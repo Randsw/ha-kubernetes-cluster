@@ -5,7 +5,7 @@
     repo_url: https://metallb.github.io/metallb
 
 - name: Update helm repo
-  command: helm repo update
+  ansible.builtin.command: helm repo update
 
 - name: Deploy latest version of Metallb chart inside metallb-system namespace
   kubernetes.core.helm:
@@ -46,7 +46,7 @@
           pod-security.kubernetes.io/warn: privileged
 
 - name: Wait for metallb pods become ready
-  shell: "kubectl wait --namespace=metallb-system --for=condition=Ready --all pods --timeout=600s"
+  ansible.builtin.command: "kubectl wait --namespace=metallb-system --for=condition=Ready --all pods --timeout=600s"
 
 - name: Configure metallb address pool
   kubernetes.core.k8s:

@@ -5,7 +5,7 @@
     repo_url: "https://kubernetes.github.io/ingress-nginx"
 
 - name: Update helm repo
-  command: helm repo update
+  ansible.builtin.command: helm repo update
 
 - name: Deploy ingress nginx chart inside ingress-nginx namespace with values when no Gateway nodes
   kubernetes.core.helm:

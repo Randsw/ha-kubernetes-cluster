@@ -5,7 +5,7 @@
     repo_url: "https://prometheus-community.github.io/helm-charts"
 
 - name: Update helm repo
-  command: helm repo update
+  ansible.builtin.command: helm repo update
 
 - name: Deploy kube-prometheus-stack chart inside {{ prometheus_stack_namespace }} namespace with values
   kubernetes.core.helm:
@@ -57,4 +57,4 @@
             pathType: Prefix
 
 - name: Wait for kube-prometheus-stack pods become ready
-  shell: "kubectl wait --namespace={{ prometheus_stack_namespace }} --for=condition=Ready --all pods --timeout=600s"
+  ansible.builtin.command: "kubectl wait --namespace={{ prometheus_stack_namespace }} --for=condition=Ready --all pods --timeout=600s"

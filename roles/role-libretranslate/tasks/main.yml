@@ -1,0 +1,102 @@
+---
+- name: Create LibreTranslate namespace
+  kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name:  libretranslate
+
+- name: Create LibreTranslate Deployment
+  kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    state: present
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: libretranslate
+        namespace: libretranslate
+      spec:
+        selector:
+          matchLabels:
+            app: libretranslate
+        template:
+          metadata:
+            labels:
+              app: libretranslate
+          spec:
+            containers:
+            - name: libretranslate
+              image: libretranslate/libretranslate:latest
+              resources:
+                limits:
+                  memory: "1Gi"
+                  cpu: "500m"
+              ports:
+              - containerPort: 5000
+              env:
+              - name: "LT_LOAD_ONLY"
+                valueFrom:
+                  configMapKeyRef:
+                    name: libretranslate-config
+                    key: langs
+
+- name: Create LibreTranslate ConfigMap
+  kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: libretranslate-config
+        namespace: libretranslate
+      data:
+        langs: "es,de,it,en,fr"
+
+- name: Create LibreTranslate Service
+  kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: libretranslate-svc
+        namespace: libretranslate
+      spec:
+        selector:
+          app: libretranslate
+        ports:
+        - port: 5000
+          targetPort: 5000
+
+- name: Create LibreTranslate Ingress
+  kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    state: present
+    definition:
+      apiVersion: extensions/v1beta1
+      kind: Ingress
+      metadata:
+        name: libretranslate-ingress
+        nnamespace: libretranslate
+        labels:
+          app: libretranslate
+      spec:
+        rules:
+        - host: "{{ translate_ingress_host }}"
+          http:
+            paths:
+            - path: "/"
+              backend:
+                service:
+                  name: libretranslate-svc
+                  port: 
+                    number: 5000
+
+- name: Wait for libretranslate pods become ready
+  ansible.builtin.command: "kubectl wait --namespace=libretranslate --for=condition=Ready --all pods --timeout=600s"

@@ -5,7 +5,7 @@
     repo_url: https://grafana.github.io/helm-charts
 
 - name: Update helm repo
-  command: helm repo update
+  ansible.builtin.command: helm repo update
 
 - name: Deploy latest version of Loki-stack chart inside loki-stack namespace
   kubernetes.core.helm:
@@ -26,4 +26,4 @@
         enabled: false    
 
 - name: Wait for loki-stack pods become ready
-  shell: "kubectl wait --namespace=logging --for=condition=Ready --all pods --timeout=600s"
+  ansible.builtin.command: "kubectl wait --namespace=logging --for=condition=Ready --all pods --timeout=600s"

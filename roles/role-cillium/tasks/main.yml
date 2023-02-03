@@ -21,4 +21,4 @@
         replicas: "{{ groups['k8s_ha_control_node'] | length }}" 
 
 - name: Wait for cillium pods become ready
-  shell: "kubectl wait --namespace=kube-system --for=condition=Ready --all pods --timeout=600s"
+  ansible.builtin.command: "kubectl wait --namespace=kube-system --for=condition=Ready --all pods --timeout=600s"
