@@ -22,9 +22,11 @@
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         dest: /etc/apt/keyrings/kubernetes-archive-keyring.gpg
         mode: '0744'
+      throttle: 1  
 
     - name: Add kubernetes repository
       ansible.builtin.apt_repository:
         repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main"
         state: present
         filename: kubernetes
+      throttle: 1

@@ -17,8 +17,18 @@
     values:
       ipam:
         mode: kubernetes
+      kubeProxyReplacement: strict
+      autoDirectNodeRoutes: true
+      ipv4NativeRoutingCIDR: 192.168.0.0/24
+      tunnel: disabled
+      k8sServiceHost: "{{ kube_vip_address }}"
+      k8sServicePort: "{{ k8s_cp_port }}"
       operator:
-        replicas: "{{ groups['k8s_ha_control_node'] | length }}" 
+        replicas: "{{ groups['k8s_ha_control_node'] | length }}"
+        nodeSelector:
+          node-role.kubernetes.io: worker
+      devices: "{{ vip_eth_interface }}"
 
 - name: Wait for cillium pods become ready
   ansible.builtin.command: "kubectl wait --namespace=kube-system --for=condition=Ready --all pods --timeout=600s"
+  

@@ -1,11 +1,18 @@
 ---
-enable_metallb: false
+enable_metallb: true
 cni_type: cillium
 ansible_python_interpreter: /usr/bin/python3
 become_pass: "{{ ansible_executor_become_pass }}"
-k8s_cp: "192.168.0.171"
-k8s_cp_port: 6443
+k8s_cp: "192.168.0.150"
+k8s_cp_port: 8443
+######################### kube vip variables ################################
 vip_eth_interface: eth1
-kube_vip_address: "192.168.0.171"
+kube_vip_address: 192.168.0.150
 
 kubernetes_kubeadm_init_extra_opts: "--cri-socket  unix:///run/containerd/containerd.sock"
+
+kubernetes_gw_taints: 
+  key: node-role.kubernetes.io/gw
+  effect: NoSchedule
+
+skip_kube_proxy_stage: "--skip-phases=addon/kube-proxy" # or leave empty if kube-proxy install is on

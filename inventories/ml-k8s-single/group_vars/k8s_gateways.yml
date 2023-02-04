@@ -1,5 +1,18 @@
 ---
-kubernetes_gw_taints: 
-  key: node-role.kubernetes.io/gw
-  effect: NoSchedule
-haproxy_server: false
+haproxy_server: true
+kubernetes_role: node
+
+# Frontend settings.
+haproxy_frontend_name: 'k8s-ha-apiserver-ext'
+haproxy_frontend_bind_address: '*'
+haproxy_frontend_port: 6443
+haproxy_frontend_mode: 'tcp'
+
+# Backend settings.
+haproxy_backend_name: 'k8s-ha-apiserver'
+haproxy_backend_mode: 'tcp'
+
+haproxy_backend_servers:
+  - name: k8s-cp
+    address: "k8s-cp:{{k8s_cp_port}}"
+    

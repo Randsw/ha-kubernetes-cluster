@@ -79,7 +79,7 @@
         kubernetes_control_node_join_command: >
           {{ kubernetes_join_command_result.stdout }}
           --apiserver-advertise-address {{ hostvars[item]['kubernetes_apiserver_advertise_address'] }}
-          {{ kubernetes_control_nodejoin_command_extra_opts }}
+          {{ kubernetes_control_node_join_command_extra_opts }}
           {{ control_node_join_cert_key }}
       when: kubernetes_join_command_result.stdout is defined and kubernetes_role == 'first-control-node'
       delegate_to: "{{ item }}"
@@ -104,7 +104,7 @@
       ansible.builtin.set_fact:
         kubernetes_node_join_command: >
           {{ kubernetes_join_command_result.stdout }}
-          {{ hostvars[groups['k8s_ha_workers'][0]]['kubernetes_join_command_extra_opts'] }} 
+          {{ hostvars[groups['k8s_workers'][0]]['kubernetes_join_command_extra_opts'] }} 
       when: kubernetes_join_command_result.stdout is defined
       delegate_to: "{{ item }}"
       delegate_facts: true
@@ -123,11 +123,12 @@
 - name: Add taints to gw nodes (if configured).
   kubernetes.core.k8s_taint:
     state: present
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     name: "{{ node }}"
     taints:
     - effect: "{{ kubernetes_gw_taints.effect }}"
       key: "{{ kubernetes_gw_taints.key }}"
-  loop: "{{ groups['k8s_gateway'] }}"
+  loop: "{{ groups['k8s_gateways'] }}"
   loop_control:
     loop_var: node
   when: kubernetes_role == 'first-control-node' and groups['k8s_gateways'] | length > 0
@@ -154,3 +155,39 @@
         loop_var: k8s_manifests
 
   when: inventory_hostname in groups['k8s_ha_control_node']
+
+- name: Wait for kube VIP is stabilized
+  wait_for:
+    host: "{{ kube_vip_address }}"
+    port: 8443
+    delay: 10
+
+- name: Set node label on gw nodes
+  kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    state: patched
+    kind: Node
+    name: "{{ item }}"
+    definition:
+      metadata:
+        labels:
+          node-role.kubernetes.io: gw
+  loop: "{{ groups['k8s_gateways'] }}"
+  when: kubernetes_role == 'first-control-node' and groups['k8s_gateways'] | length > 0
+
+- name: Set node label on worker nodes
+  kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    state: patched
+    kind: Node
+    name: "{{ item }}"
+    definition:
+      metadata:
+        labels:
+          node-role.kubernetes.io: worker
+  loop: "{{ groups['k8s_workers'] }}"
+  when: kubernetes_role == 'first-control-node' and groups['k8s_workers'] | length > 0
+
+- name: Wait for kube-vip pods become ready
+  ansible.builtin.command: "kubectl wait -namespace=kube-system --for=condition=Ready pod -l component=kube-vip --timeout=600s"
+  when: kubernetes_role == 'first-control-node' and groups['k8s_ha_control_node'] | length > 0

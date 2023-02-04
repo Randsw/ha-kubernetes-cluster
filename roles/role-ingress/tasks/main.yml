@@ -69,7 +69,6 @@
                   summary: More than 5% of all requests returned 4XX, this requires your attention
   when: groups['k8s_gateways'] | length == 0 
 
-
 - name: Deploy ingress nginx chart inside ingress-nginx namespace with values when Gateway nodes exist
   kubernetes.core.helm:
     kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
@@ -80,17 +79,23 @@
     force: yes
     values:
       controller:
-        kind: DaemoSet
+        kind: DaemonSet
         podAnnotations:
           fluentbit.io/parser: "{{ fluentbit_parser }}"
+        nodeSelector:
+          node-role.kubernetes.io: gw
         tolerations:
           - effect: NoSchedule
             key: "{{ ingress_taint }}"
+            operator: "Exists"
         admissionWebhooks:
           patch:
             tolerations:
             - effect: NoSchedule
               key: "{{ ingress_taint }}"
+              operator: "Exists"
+            nodeSelector:
+              node-role.kubernetes.io: gw
         metrics:
           enabled: true
           serviceMonitor:
@@ -147,3 +152,6 @@
     namespace: "{{ prometheus_stack_namespace }}"
     validate:
       fail_on_error: yes
+
+- name: Wait for ingress pods become ready
+  ansible.builtin.command: "kubectl wait --namespace=ingress-nginx --for=condition=Ready --all pods --timeout=600s"

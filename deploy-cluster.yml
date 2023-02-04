@@ -130,42 +130,43 @@
       ansible.builtin.command: whoami
       register: ansible_host_username
       changed_when: false
+
     - name: Set up Cillium if set
       ansible.builtin.import_role:
         name: role-cillium
       when: cni_type == "cillium" and kubernetes_role == 'first-control-node'
-
-    - name: Set up Metallb if set
-      ansible.builtin.import_role:
-        name: role-metallb
-      when: enable_metallb and kubernetes_role == 'first-control-node'
 
     - name: Set up kube-prometheus-stack
       ansible.builtin.import_role:
         name: role-prometheus-stack
       when: kubernetes_role == 'first-control-node'
 
+    - name: Set up Metallb if set
+      ansible.builtin.import_role:
+        name: role-metallb
+      when: enable_metallb and kubernetes_role == 'first-control-node'
+
     - name: Set up Nginx ingress
       ansible.builtin.import_role:
         name: role-ingress
       when: kubernetes_role == 'first-control-node'
 
-    - name: Set up local-path-provisioner
-      ansible.builtin.import_role:
-        name: role-local-path-provisioner
-      when: kubernetes_role == 'first-control-node'
+    # - name: Set up local-path-provisioner
+    #   ansible.builtin.import_role:
+    #     name: role-local-path-provisioner
+    #   when: kubernetes_role == 'first-control-node'
 
-    - name: Set up loki-stack
-      ansible.builtin.import_role:
-        name: role-loki-stack
-      when: kubernetes_role == 'first-control-node'
+    # - name: Set up loki-stack
+    #   ansible.builtin.import_role:
+    #     name: role-loki-stack
+    #   when: kubernetes_role == 'first-control-node'
 
-    - name: Set up minio
-      ansible.builtin.import_role:
-        name: role-minio
-      when: kubernetes_role == 'first-control-node'
+    # - name: Set up minio
+    #   ansible.builtin.import_role:
+    #     name: role-minio
+    #   when: kubernetes_role == 'first-control-node'
 
-    - name: Set up elasticsearch and kibana
-      ansible.builtin.import_role:
-        name: roles-es-kibana
-      when: kubernetes_role == 'first-control-node'
+    # - name: Set up elasticsearch and kibana
+    #   ansible.builtin.import_role:
+    #     name: roles-es-kibana
+    #   when: kubernetes_role == 'first-control-node'

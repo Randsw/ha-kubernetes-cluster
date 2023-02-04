@@ -11,13 +11,13 @@
     regexp: 'k8s-cp$'
     line: "{{ kube_vip_address }} k8s-cp"
 
-- name: Add Gateway1 entry in /etc/hosts on ansible executor host
-  become: true
-  become_method: sudo
-  vars:
-    ansible_become_password: "{{ become_pass }}"
-  ansible.builtin.lineinfile:
-    path: /etc/hosts
-    line: "{{ hostvars[groups['k8s_ha_gateway'][0]]['ansible_host'] }} k8s-cp"
-  delegate_to: localhost
-  when: kubernetes_role == 'first-control-node'
+# - name: Add Gateway1 entry in /etc/hosts on ansible executor host
+#   become: true
+#   become_method: sudo
+#   vars:
+#     ansible_become_password: "{{ become_pass }}"
+#   ansible.builtin.lineinfile:
+#     path: /etc/hosts
+#     line: "{{ hostvars[groups['k8s_gateways'][0]]['ansible_host'] }} k8s-cp"
+#   delegate_to: localhost
+#   when: kubernetes_role == 'first-control-node'

@@ -1,4 +1,26 @@
 ---
 kubernetes_role: control-node
 kubernetes_control_node_join_command_extra_opts: "--cri-socket  unix:///run/containerd/containerd.sock --control-plane --certificate-key "
-haproxy_server: false
+haproxy_server: true
+
+# Frontend settings.
+haproxy_frontend_name: 'k8s-ha-master-front'
+haproxy_frontend_bind_address: '*'
+haproxy_frontend_port: 8443
+haproxy_frontend_mode: 'tcp'
+
+# Backend settings.
+haproxy_backend_name: 'k8s-ha-master-front'
+haproxy_backend_mode: 'tcp'
+haproxy_backend_balance_method: 'roundrobin'
+haproxy_backend_httpchk: 'GET /healthz'
+haproxy_backend_http_check_expect: 'status 200'
+haproxy_ssl_hello_chk: true
+
+haproxy_backend_servers:
+  - name: k8s-master1
+    address: "{{ hostvars[groups['k8s_ha_control_node'][0]]['ansible_host'] }}:6443"
+  - name: k8s-master2
+    address: "{{ hostvars[groups['k8s_ha_control_node'][1]]['ansible_host'] }}:6443"
+  - name: k8s-master3
+    address: "{{ hostvars[groups['k8s_ha_control_node'][2]]['ansible_host'] }}:6443"   

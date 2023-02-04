@@ -2,13 +2,9 @@ all:
   children:
     k8s_ha_control_node:
       hosts:
-        control-node-[1:3]:
+        control-node-[1:1]:
     k8s_workers:
-      hosts:
-        worker-[1:3]:
     k8s_gateways:
-      hosts:
-        gw-[1:2]:
     k8s_cluster:
       children:
         k8s_ha_control_node:

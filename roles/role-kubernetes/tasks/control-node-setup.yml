@@ -20,8 +20,8 @@
     group: "{{ ansible_user }}"
     mode: 0555
 
-- name: Initialize Kubernetes master with kubeadm init using config file
-  ansible.builtin.command: "kubeadm init --config /home/{{ ansible_host_username.stdout }}/cluster-config.yml" 
+- name: Initialize Kubernetes control node with kubeadm init using config file
+  ansible.builtin.command: "kubeadm init --config /home/{{ ansible_host_username.stdout }}/cluster-config.yml {{ skip_kube_proxy_stage }}" 
   register: kubeadmin_init
   when: not kubernetes_init_stat.stat.exists
 
@@ -50,16 +50,16 @@
     dest: "/home/{{ playbook_executor_username.stdout }}/.kube/"
     flat: yes
 
-- name: Change k8s VIP port to k8s apiserver standart port. Access from ansible executor throuht gateway1 on port 6443
-  become: false
-  ansible.builtin.lineinfile:
-    path: "/home/{{ playbook_executor_username.stdout }}/.kube/admin.conf"
-    regexp: '(^\s*server:\s*){{ item.search }}$'
-    line:  '\1{{ item.replace }}'
-    backrefs: yes
-  loop:
-    - { search: 'https://k8s-cp:{{ k8s_cp_port }}', replace: 'https://k8s-cp:6443' }
-  delegate_to: localhost
+# - name: Change k8s VIP port to k8s apiserver standart port. Access from ansible executor throuht gateway1 on port 6443
+#   become: false
+#   ansible.builtin.lineinfile:
+#     path: "/home/{{ playbook_executor_username.stdout }}/.kube/admin.conf"
+#     regexp: '(^\s*server:\s*){{ item.search }}$'
+#     line:  '\1{{ item.replace }}'
+#     backrefs: yes
+#   loop:
+#     - { search: 'https://k8s-cp:{{ k8s_cp_port }}', replace: 'https://k8s-cp:6443' }
+#   delegate_to: localhost
 
 - name: Install Calico CNI
   block:
@@ -135,6 +135,7 @@
     - kube-apiserver
     - kube-controller-manager
     - kube-scheduler
+    - kube-vip
 
 - name: Generate kubernetes core certificates
   ansible.builtin.command: "kubeadm init phase upload-certs --upload-certs " 

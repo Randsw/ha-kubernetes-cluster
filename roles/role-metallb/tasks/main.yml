@@ -14,10 +14,16 @@
     chart_ref: metallb/metallb
     release_namespace: metallb-system
     create_namespace: true
-    wait: true
-    atomic: true
+    #wait: true
+    #atomic: true
     values:
+      speaker:
+        tolerations:
+          - key: node-role.kubernetes.io/gw
+            effect: NoSchedule
       prometheus:
+        namespace: "{{ prometheus_stack_namespace }}"
+        serviceAccount: "monitoring-kube-prometheus-prometheus"
         serviceMonitor:
           enabled: true
           speaker:
@@ -75,4 +81,3 @@
       spec:
         ipAddressPools:
         - ingress-pool
-
