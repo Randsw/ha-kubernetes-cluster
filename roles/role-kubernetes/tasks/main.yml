@@ -161,6 +161,7 @@
     host: "{{ kube_vip_address }}"
     port: 8443
     delay: 10
+  when: kubernetes_role == 'first-control-node' and groups['k8s_ha_control_node'] | length > 1
 
 - name: Set node label on gw nodes
   kubernetes.core.k8s:
