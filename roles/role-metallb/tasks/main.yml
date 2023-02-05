@@ -18,8 +18,10 @@
     #atomic: true
     values:
       speaker:
+        nodeSelector:
+          node-role.kubernetes.io: gw
         tolerations:
-          - key: node-role.kubernetes.io/gw
+          - key: "{{ metallb_taint }}"
             effect: NoSchedule
       prometheus:
         namespace: "{{ prometheus_stack_namespace }}"

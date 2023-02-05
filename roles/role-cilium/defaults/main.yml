@@ -1,0 +1,4 @@
+---
+cilium_chart_version: "1.12.6"
+cni_type: cilium
+cilium_operator_replica: "{{ (groups['k8s_workers'] | length) if (groups['k8s_ha_control_node'] | length > 1) else 1 }}"

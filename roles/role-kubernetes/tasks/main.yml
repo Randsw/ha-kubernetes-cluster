@@ -29,10 +29,14 @@
     state: "{{ item.state | default('present') }}"
   notify: restart kubelet
   with_items: "{{ kubernetes_packages }}"
+  throttle: 1 
 
 - include_tasks: sysctl-setup.yml
 
 - include_tasks: kubelet-setup.yml
+
+- name: Ensure kubelet is restarted immediately if necessary.
+  meta: flush_handlers
 
 - name: Ensure kubelet is started and enabled at boot.
   ansible.builtin.service:
@@ -156,10 +160,10 @@
 
   when: inventory_hostname in groups['k8s_ha_control_node']
 
-- name: Wait for kube VIP is stabilized
+- name: Wait for kube VIP API address is stabilized
   wait_for:
-    host: "{{ kube_vip_address }}"
-    port: 8443
+    host: "{{ k8s_cp }}"
+    port: "{{ k8s_cp_port }}"
     delay: 10
   when: kubernetes_role == 'first-control-node' and groups['k8s_ha_control_node'] | length > 1
 
@@ -190,5 +194,28 @@
   when: kubernetes_role == 'first-control-node' and groups['k8s_workers'] | length > 0
 
 - name: Wait for kube-vip pods become ready
-  ansible.builtin.command: "kubectl wait -namespace=kube-system --for=condition=Ready pod -l component=kube-vip --timeout=600s"
-  when: kubernetes_role == 'first-control-node' and groups['k8s_ha_control_node'] | length > 0
+  ansible.builtin.command: "kubectl wait --namespace=kube-system --for=condition=Ready pod -l component=kube-vip --timeout=600s"
+  become: false
+  when: kubernetes_role == 'first-control-node' and groups['k8s_ha_control_node'] | length > 1
+
+- name: Wait till the control-plane is Ready
+  kubernetes.core.k8s_info:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    kind: Pod
+    wait: yes
+    name: "{{ item }}-{{ inventory_hostname }}"
+    namespace: kube-system
+    wait_sleep: 10
+    wait_timeout: 360
+    wait_condition:
+      type: Ready
+  loop:
+    - etcd
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
+  when: kubernetes_role == 'first-control-node'
+
+# - name: Wait for kube control plane pods become ready
+#   ansible.builtin.command: "kubectl wait --namespace=kube-system --for=condition=Ready pod -l tier=control-plane --timeout=600s"
+#   become: false

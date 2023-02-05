@@ -10,7 +10,7 @@ apiServer:
     enable-admission-plugins: NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota
     authorization-mode: Node,RBAC
 clusterName: {{ kubernetes_cluster_name }}
-controlPlaneEndpoint: {{kube_vip_address}}:{{ k8s_cp_port }}
+controlPlaneEndpoint: {{k8s_cp}}:{{ k8s_cp_port }}
 networking:
   podSubnet: {{ kubernetes_pod_network.cidr }}
   dnsDomain: {{ kubernetes_cluster_domain_name}}

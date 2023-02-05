@@ -4,7 +4,7 @@ ansible_user: vagrant
 ansible_ssh_private_key_file: "./.vagrant/machines/{{ inventory_hostname }}/virtualbox/private_key"
 
 ###################### Kubernetes variable ############################################
-kubernetes_allow_pods_on_control_node: false
+haproxy_server: true # if not HA config set it to false
 kubernetes_role: "first-control-node"
 kubernetes_kubeproxy_mode: "ipvs"
 kubernetes_apiserver_advertise_address: "{{ ansible_host }}"
@@ -12,11 +12,12 @@ kubernetes_cluster_domain_name: "cluster.local"
 kubernetes_cgroupDriver: "systemd"
 kubernetes_cri_socket: "unix:///run/containerd/containerd.sock"
 kubernetes_cluster_name: kubernetes
-kubernetes_apiserver_certSANs:
+
+common_cert_SANs:
   - 127.0.0.1
   - api.ml-k8s.com
-  - 192.168.0.131
-  - 192.168.0.132
-  - 192.168.0.133
-  - 192.168.0.133
   - k8s-cp
+
+certSANs: "{{ groups['k8s_ha_control_node'] | map('extract', hostvars, ['ansible_host']) + common_cert_SANs }}"
+
+kubernetes_apiserver_certSANs: "{{ certSANs + [kube_vip_address] if groups['k8s_ha_control_node'] | length > 1 else certSANs }}"

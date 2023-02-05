@@ -9,6 +9,7 @@
   package:
     name: "{{ containerd_package }}"
     state: "{{ containerd_package_state }}"
+  throttle: 1 
 
 - name: Ensure containerd is started and enabled at boot.
   service:

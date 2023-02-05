@@ -50,17 +50,6 @@
     dest: "/home/{{ playbook_executor_username.stdout }}/.kube/"
     flat: yes
 
-# - name: Change k8s VIP port to k8s apiserver standart port. Access from ansible executor throuht gateway1 on port 6443
-#   become: false
-#   ansible.builtin.lineinfile:
-#     path: "/home/{{ playbook_executor_username.stdout }}/.kube/admin.conf"
-#     regexp: '(^\s*server:\s*){{ item.search }}$'
-#     line:  '\1{{ item.replace }}'
-#     backrefs: yes
-#   loop:
-#     - { search: 'https://k8s-cp:{{ k8s_cp_port }}', replace: 'https://k8s-cp:6443' }
-#   delegate_to: localhost
-
 - name: Install Calico CNI
   block:
     - name: Download Calico manifest to the cluster.
@@ -135,7 +124,21 @@
     - kube-apiserver
     - kube-controller-manager
     - kube-scheduler
+
+- name: Wait till the kube-vip pod is created
+  kubernetes.core.k8s_info:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    kind: Pod
+    wait: yes
+    name: "{{ item }}-{{ inventory_hostname }}"
+    namespace: kube-system
+    wait_sleep: 10
+    wait_timeout: 360
+    wait_condition:
+      type: Ready
+  loop:
     - kube-vip
+  when: groups['k8s_ha_control_node'] | length > 1
 
 - name: Generate kubernetes core certificates
   ansible.builtin.command: "kubeadm init phase upload-certs --upload-certs " 

@@ -21,13 +21,35 @@
       autoDirectNodeRoutes: true
       ipv4NativeRoutingCIDR: 192.168.0.0/24
       tunnel: disabled
-      k8sServiceHost: "{{ kube_vip_address }}"
+      k8sServiceHost: "{{ k8s_cp }}"
       k8sServicePort: "{{ k8s_cp_port }}"
       operator:
-        replicas: "{{ groups['k8s_ha_control_node'] | length }}"
+        replicas: "{{ cilium_operator_replica }}"
         nodeSelector:
           node-role.kubernetes.io: worker
       devices: "{{ vip_eth_interface }}"
+  when: groups['k8s_ha_control_node'] | length > 1
+
+- name: Deploy latest version of cillium chart inside kube-system namespace with values
+  kubernetes.core.helm:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    name: cilium
+    chart_ref: cilium/cilium
+    release_namespace: kube-system
+    chart_version: "{{ cilium_chart_version }}"
+    values:
+      ipam:
+        mode: kubernetes
+      kubeProxyReplacement: strict
+      autoDirectNodeRoutes: true
+      ipv4NativeRoutingCIDR: 192.168.0.0/24
+      tunnel: disabled
+      k8sServiceHost: "{{ k8s_cp }}"
+      k8sServicePort: "{{ k8s_cp_port }}"
+      operator:
+        replicas: "{{ cilium_operator_replica }}"
+      devices: "{{ vip_eth_interface }}"
+  when: groups['k8s_ha_control_node'] | length == 1
 
 - name: Wait for cillium pods become ready
   ansible.builtin.command: "kubectl wait --namespace=kube-system --for=condition=Ready --all pods --timeout=600s"
