@@ -1,0 +1,14 @@
+---
+extends: default
+
+ignore: |
+  files/
+
+rules:
+  line-length:
+    max: 120
+    level: warning
+  braces:
+    level: warning
+  commas:
+    level: warning

@@ -1,28 +1,32 @@
-- name: create dir for kustomize file
+---
+- name: Create dir for kustomize file
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "/home/{{ ansible_host_username.stdout }}/kustomize"
     state: directory
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: 0755
-  loop: kustomize_dir
+  tags:
+    - molecule-idempotence-notest
 
 - name: Copy all kustomize files and folders to remote host
   ansible.posix.synchronize:
     src: kustomize/
     dest: /home/{{ ansible_host_username.stdout }}/kustomize/
+  tags:
+    - molecule-idempotence-notest
 
 - name: Copy kustomize files to remote host
   ansible.builtin.template:
     src: "{{ item.src }}"
-    dest: "{{ item.dst }}"
+    dest: "{{ item.dest }}"
     owner: "{{ ansible_user }}"
     group: "{{ ansible_user }}"
     mode: 0755
   loop:
-    - { src: 'kustomization-dbnet.yaml.j2', dest: '/home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/dbnet/kustomization.yaml' }
-    - { src: 'kustomization-master.yaml.j2', dest: '/home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/master/kustomization.yaml' }
-    - { src: 'kustomization-tesseract.yaml.j2', dest: '/home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/tesseract/kustomization.yaml' }
+    - {src: 'kustomization-dbnet.yaml.j2', dest: '/home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/dbnet/kustomization.yaml'}
+    - {src: 'kustomization-master.yaml.j2', dest: '/home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/master/kustomization.yaml'}
+    - {src: 'kustomization-tesseract.yaml.j2', dest: '/home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/tesseract/kustomization.yaml'}
 
 - name: Apply manifest to k8s
   ansible.builtin.command: kubectl -k apply -f /home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/{{ item }}
@@ -30,3 +34,5 @@
     - dbnet
     - master
     - tesseract
+  tags:
+    - molecule-notest

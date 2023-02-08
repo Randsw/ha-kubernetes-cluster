@@ -1,0 +1,30 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+  vars:
+    ansible_user: vagrant
+    env: dev
+    dbnet_image:
+      name: busybox
+      tag: "1.34.0"
+
+    master_image:
+      name: busybox
+      tag: "1.35.0"
+
+    tesseract_image:
+      name: busybox
+      tag: "1.36.0"
+      port: 10001
+
+  pre_tasks:
+
+    - name: Get ansible host executer username
+      become: false
+      ansible.builtin.command: whoami
+      register: ansible_host_username
+      changed_when: false
+
+  roles:
+    - {role: role-application}

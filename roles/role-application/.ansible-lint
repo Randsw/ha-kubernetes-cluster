@@ -1,0 +1,13 @@
+---
+skip_list:
+  - '306'
+  - '301'
+  - '305'
+  - '106'  # Role name {} does not match ``^[a-z][a-z0-9_]+$`` pattern'                                                                                                                                 │
+  - '208'  # File permissions not mentioned'                                                                                                                                                            │
+  - '503'  # Tasks that run when changed should likely be handlers'                                                                                                                                     │
+  - '702'  # Tags must contain lowercase letters and digits only'
+warn_list:  # or 'skip_list' to silence them completely
+  - yaml  # Violations reported by yamllint
+  - meta-no-tags  # Tags must contain lowercase letters and digits only
+  - no-handler  # Tasks that run when changed should likely be handlers

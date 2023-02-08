@@ -1,0 +1,32 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: vagrant
+  provider:
+    name: virtualbox
+lint: |
+  set -e
+  yamllint .
+  ansible-lint .
+platforms:
+  - name: app-deploy-1
+    box: geerlingguy/ubuntu2004
+    memory: 512
+    options:
+      append_platform_to_hostname: no
+    cpus: 1
+    groups:
+      - appdeploy
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      pipelining: true
+  env:
+    ANSIBLE_VERBOSITY: 1
+  log: true
+  playbooks:
+    converge: ${MOLECULE_PLAYBOOK:-converge.yml}
+verifier:
+  name: ansible

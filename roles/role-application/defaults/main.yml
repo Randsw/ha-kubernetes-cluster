@@ -1,3 +1,4 @@
+---
 kustomize_dir:
   - /home/{{ ansible_host_username.stdout }}/kustomize
 

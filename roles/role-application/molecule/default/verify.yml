@@ -1,0 +1,42 @@
+---
+- name: Verify
+  hosts: all
+  become: true
+  vars:
+    ansible_user: vagrant
+    env: dev
+
+  tasks:
+    - name: Get ansible host executer username
+      become: false
+      ansible.builtin.command: whoami
+      register: ansible_host_username
+      changed_when: false
+  post_tasks:
+
+    - name: Verify that dbnet kustomization exist
+      ansible.builtin.stat:
+        path: /home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/dbnet/kustomization.yaml
+      register: dbnet
+
+    - ansible.builtin.assert:
+        that:
+          - dbnet.stat.exists
+
+    - name: Verify that master kustomization exist
+      ansible.builtin.stat:
+        path: /home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/master/kustomization.yaml
+      register: master
+
+    - ansible.builtin.assert:
+        that:
+          - master.stat.exists
+
+    - name: Verify that tesseract kustomization exist
+      ansible.builtin.stat:
+        path: /home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/tesseract/kustomization.yaml
+      register: tesseract
+
+    - ansible.builtin.assert:
+        that:
+          - tesseract.stat.exists
