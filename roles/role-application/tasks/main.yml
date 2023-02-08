@@ -29,7 +29,7 @@
     - {src: 'kustomization-tesseract.yaml.j2', dest: '/home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/tesseract/kustomization.yaml'}
 
 - name: Apply manifest to k8s
-  ansible.builtin.command: kubectl -k apply -f /home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/{{ item }}
+  ansible.builtin.command: kubectl apply -k /home/{{ ansible_host_username.stdout }}/kustomize/overlays/{{ env }}/{{ item }}
   loop:
     - dbnet
     - master
