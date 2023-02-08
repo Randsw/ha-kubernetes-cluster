@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+- ../../../base
+
+commonLabels:
+  component: dbnet-dev
+
+namePrefix: dbnet-dev-
+
+images:
+- name: busybox
+  newName: busybox
+  newTag: "1.34.0"
+
+patches:
+- patch: |-
+    - op: replace
+      path: "/spec/template/spec/containers/0/name"
+      value: dbnet
+  target:
+      group: apps
+      version: v1
+      kind: Deployment
+      labelSelector: "app=razmetka"

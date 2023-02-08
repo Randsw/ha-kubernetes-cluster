@@ -215,7 +215,3 @@
     - kube-controller-manager
     - kube-scheduler
   when: kubernetes_role == 'first-control-node'
-
-# - name: Wait for kube control plane pods become ready
-#   ansible.builtin.command: "kubectl wait --namespace=kube-system --for=condition=Ready pod -l tier=control-plane --timeout=600s"
-#   become: false

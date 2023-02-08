@@ -1,7 +1,7 @@
 ---
-enable_metallb: true
+enable_metallb: false
 cni_type: cilium
-kubernetes_allow_pods_on_control_node: false
+kubernetes_allow_pods_on_control_node: true
 ansible_python_interpreter: /usr/bin/python3
 become_pass: "{{ ansible_executor_become_pass }}"
 ######################### kube vip variables ################################

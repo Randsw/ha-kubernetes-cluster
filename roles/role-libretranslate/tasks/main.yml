@@ -7,7 +7,7 @@
       apiVersion: v1
       kind: Namespace
       metadata:
-        name:  libretranslate
+        name: "{{ application_namespace }}"
 
 - name: Create LibreTranslate Deployment
   kubernetes.core.k8s:
@@ -18,7 +18,7 @@
       kind: Deployment
       metadata:
         name: libretranslate
-        namespace: libretranslate
+        namespace: "{{ application_namespace }}"
       spec:
         selector:
           matchLabels:
@@ -30,7 +30,7 @@
           spec:
             containers:
             - name: libretranslate
-              image: libretranslate/libretranslate:latest
+              image: "{{ libretranslate_image }}"
               resources:
                 limits:
                   memory: "1Gi"
@@ -53,9 +53,9 @@
       kind: ConfigMap
       metadata:
         name: libretranslate-config
-        namespace: libretranslate
+        namespace: "{{ application_namespace }}"
       data:
-        langs: "es,de,it,en,fr"
+        langs: "{{ libretranslate_lang }}"
 
 - name: Create LibreTranslate Service
   kubernetes.core.k8s:
@@ -66,7 +66,7 @@
       kind: Service
       metadata:
         name: libretranslate-svc
-        namespace: libretranslate
+        namespace: "{{ application_namespace }}"
       spec:
         selector:
           app: libretranslate
@@ -83,7 +83,7 @@
       kind: Ingress
       metadata:
         name: libretranslate-ingress
-        nnamespace: libretranslate
+        namespace: "{{ application_namespace }}"
         labels:
           app: libretranslate
       spec:
@@ -99,4 +99,4 @@
                     number: 5000
 
 - name: Wait for libretranslate pods become ready
-  ansible.builtin.command: "kubectl wait --namespace=libretranslate --for=condition=Ready --all pods --timeout=600s"
+  ansible.builtin.command: "kubectl wait --namespace={{ application_namespace }} --for=condition=Ready --all pods --timeout=600s"

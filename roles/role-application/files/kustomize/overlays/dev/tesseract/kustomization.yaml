@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+- ../../../base
+
+commonLabels:
+  component: tesseract
+
+namePrefix: tesseract-dev-
+
+images:
+- name: busybox
+  newName: busybox
+  newTag: "1.36.0"
+
+patches:
+  - patch: |-
+      - op: replace
+        path: "/spec/ports/0/port"
+        value: 10001
+      - op: replace
+        path: "/spec/ports/0/targetPort"
+        value: 10001
+    target:
+      version: v1
+      kind: Service
+      labelSelector: "app=razmetka"
+  - patch: |-
+      - op: replace
+        path: "/spec/template/spec/containers/0/name"
+        value: tesseract
+      - op: replace
+        path: "/spec/template/spec/containers/0/ports/0/containerPort"
+        value: 10001
+      - op: replace
+        path: "/spec/template/spec/containers/0/livenessProbe/httpGet/port"
+        value: 10001
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      labelSelector: "app=razmetka"
+

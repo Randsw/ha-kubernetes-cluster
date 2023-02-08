@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployment
+  labels:
+    app: razmetka
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 20%
+  selector:
+    matchLabels:
+      app: razmetka
+  template:
+    metadata:
+      labels:
+        app: razmetka
+    spec:
+      containers:
+        - name:  app
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: api
+              containerPort: 10000
+          livenessProbe:
+            httpGet:
+              path: /api/openapi
+              port: 10000
+            initialDelaySeconds:  15
+            periodSeconds: 30
+            timeoutSeconds: 1
+            failureThreshold: 6
+      imagePullSecrets:
+        - name: gitlab-razmetka-secret

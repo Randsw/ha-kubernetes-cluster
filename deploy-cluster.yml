@@ -132,48 +132,54 @@
   gather_facts: false
 
   tasks:
-    - name: Get ansible host executer username
-      become: false
-      ansible.builtin.command: whoami
-      register: ansible_host_username
-      changed_when: false
-
-    - name: Set up Cilium if set
-      ansible.builtin.import_role:
-        name: role-cilium
-      when: cni_type == "cilium" and kubernetes_role == 'first-control-node'
-
-    - name: Set up kube-prometheus-stack
-      ansible.builtin.import_role:
-        name: role-prometheus-stack
+    - name: Deploy infrastucture and application
       when: kubernetes_role == 'first-control-node'
+      block:
+        - name: Get ansible host executer username
+          become: false
+          ansible.builtin.command: whoami
+          register: ansible_host_username
+          changed_when: false
 
-    - name: Set up Metallb if set
-      ansible.builtin.import_role:
-        name: role-metallb
-      when: enable_metallb and kubernetes_role == 'first-control-node'
+        # - name: Setup Cilium if set
+        #   ansible.builtin.import_role:
+        #     name: role-cilium
+        #   when: cni_type == "cilium"
 
-    - name: Set up Nginx ingress
-      ansible.builtin.import_role:
-        name: role-ingress
-      when: kubernetes_role == 'first-control-node'
+        # - name: Setup kube-prometheus-stack
+        #   ansible.builtin.import_role:
+        #     name: role-prometheus-stack
 
-    - name: Set up local-path-provisioner
-      ansible.builtin.import_role:
-        name: role-local-path-provisioner
-      when: kubernetes_role == 'first-control-node'
+        # - name: Setup Metallb if set
+        #   ansible.builtin.import_role:
+        #     name: role-metallb
+        #   when: enable_metallb
 
-    - name: Set up loki-stack
-      ansible.builtin.import_role:
-        name: role-loki-stack
-      when: kubernetes_role == 'first-control-node'
+        # - name: Setup Nginx ingress
+        #   ansible.builtin.import_role:
+        #     name: role-ingress
 
-    - name: Set up minio
-      ansible.builtin.import_role:
-        name: role-minio
-      when: kubernetes_role == 'first-control-node'
+        # - name: Setup local-path-provisioner
+        #   ansible.builtin.import_role:
+        #     name: role-local-path-provisioner
 
-    - name: Set up elasticsearch and kibana
-      ansible.builtin.import_role:
-        name: roles-es-kibana
-      when: kubernetes_role == 'first-control-node'
+        # - name: Setup loki-stack
+        #   ansible.builtin.import_role:
+        #     name: role-loki-stack
+
+        # - name: Setup minio
+        #   ansible.builtin.import_role:
+        #     name: role-minio
+
+        # - name: Setup elasticsearch and kibana
+        #   ansible.builtin.import_role:
+        #     name: roles-es-kibana
+
+        # - name: Setup libretranslate
+        #   ansible.builtin.import_role:
+        #     name: role-libretranslate
+
+        - name: Setup application
+          ansible.builtin.import_role:
+            name: role-application
+

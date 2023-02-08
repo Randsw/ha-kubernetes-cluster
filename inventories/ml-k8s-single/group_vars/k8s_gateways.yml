@@ -15,4 +15,3 @@ haproxy_backend_mode: 'tcp'
 haproxy_backend_servers:
   - name: k8s-cp
     address: "k8s-cp:{{k8s_cp_port}}"
-    

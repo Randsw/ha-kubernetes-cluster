@@ -1,0 +1,28 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+bases:
+- ../../../base
+
+commonLabels:
+  component: master
+
+namePrefix: master-dev-
+
+images:
+- name: busybox
+  newName: busybox
+  newTag: "1.35.0"
+
+patches:
+- patch: |-
+    - op: replace
+      path: "/spec/template/spec/containers/0/name"
+      value: master
+    - op: replace
+      path: "/spec/template/spec/containers/0/livenessProbe"
+      value: null
+  target:
+      group: apps
+      version: v1
+      kind: Deployment
+      labelSelector: "app=razmetka"

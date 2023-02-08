@@ -1,2 +1,5 @@
 ---
 translate_ingress_host: translate.local
+libretranslate_lang: "es,de,it,en,fr"
+application_namespace: application
+libretranslate_image: libretranslate/libretranslate:latest
