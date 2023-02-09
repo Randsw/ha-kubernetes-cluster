@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   name: deployment
   labels:
-    app: razmetka
+    app: markup
 spec:
   replicas: 1
   strategy:
@@ -14,11 +14,11 @@ spec:
       maxSurge: 20%
   selector:
     matchLabels:
-      app: razmetka
+      app: markup
   template:
     metadata:
       labels:
-        app: razmetka
+        app: markup
     spec:
       containers:
         - name:  app
@@ -36,4 +36,4 @@ spec:
             timeoutSeconds: 1
             failureThreshold: 6
       imagePullSecrets:
-        - name: gitlab-razmetka-secret
+        - name: gitlab-markup-secret

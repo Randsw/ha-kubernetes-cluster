@@ -98,13 +98,13 @@ In this realisation Metallb work in Layer2 mode.
 
 ### Storage class
 
-[Local Path Provisioner](https://github.com/rancher/local-path-provisioner) provides a way for the Kubernetes users to utilize the local storage in each node. Based on the user configuration, the Local Path Provisioner will create hostPath based persistent volume on the node automatically. It utilizes the features introduced by **Kubernetes Local Persistent Volume** feature, but make it a simpler solution than the built-in local volume feature in Kubernetes. Currently the **Kubernetes Local Volume provisioner** cannot do dynamic provisioning for the local volumes.
+* [Local Path Provisioner](https://github.com/rancher/local-path-provisioner) provides a way for the Kubernetes users to utilize the local storage in each node. Based on the user configuration, the Local Path Provisioner will create hostPath based persistent volume on the node automatically. It utilizes the features introduced by **Kubernetes Local Persistent Volume** feature, but make it a simpler solution than the built-in local volume feature in Kubernetes. Currently the **Kubernetes Local Volume provisioner** cannot do dynamic provisioning for the local volumes.
 
 With **Local Path Provisioner** we can create dynamic provisioning the volume using hostPath. We  dont have to create static persistent volume. **Local Path Provisioner** do all provisioning work for us.
 
 ### Monitoring
 
-[Kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) a collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules combined with documentation and scripts to provide easy to operate end-to-end Kubernetes cluster monitoring with Prometheus using the Prometheus Operator.
+* [Kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) a collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules combined with documentation and scripts to provide easy to operate end-to-end Kubernetes cluster monitoring with Prometheus using the Prometheus Operator.
 
 ### Logging
 
@@ -147,16 +147,16 @@ Configure `Vagrantfile_ha` with your variable
 |`k8s_worker_num`        | 3             | number of worker nodes                                      |
 |`k8s_gw_num`            | 2             | number of gateway nodes                                     |
 |`bridge`                | -             | Ethernet interface with internet access nodes connected to  |
-|`vm_cidr`               | 192.168.1     | First 3 octets of nodes ip address                          |
+|`vm_cidr`               | 192.168.0     | First 3 octets of nodes ip address                          |
 |`vm_ip_addr_start`      | 130           | Nodes start ip address last octet. Increase incremently     |
 
 Create and start VM
 `VAGRANT_VAGRANTFILE=Vagrantfile_ha vagrant up`
 
 Provision VM with ansible
-`ansible-playbook -i inventories/ml-k8s/hosts.yml --ask-become-pass deploy-cluster.yml`
+`ansible-playbook -i inventories/ml-k8s/hosts.yml deploy-cluster.yml`
 
-With `--ask-become-pass` key Ansible ask the `sudo` pass on ansible-playbook executor host. This password used for add entry for gateway1 host to /etc/hosts file. Using this entry provide access outside of cluster to Kubernetes apiserver for cluster administration and to Example application as regular user.
+Kubectl config file for kubernetes cluster access would placed at `/home/<ansible user>/.kube/admin.conf`
 
 ### Single node installation
 
@@ -166,13 +166,13 @@ Configure `Vagrantfile` with your variable
 |------------------------|---------------|-------------------------------------------------------------|
 |`k8s_control_node_num`  | 1             | number of control plane nodes                               |
 |`bridge`                | -             | Ethernet interface with internet access nodes connected to  |
-|`vm_cidr`               | 192.168.1     | First 3 octets of nodes ip address                          |
+|`vm_cidr`               | 192.168.0     | First 3 octets of nodes ip address                          |
 |`vm_ip_addr_start`      | 130           | Nodes start ip address last octet. Increase incremently     |
 
 Create and start VM
 `VAGRANT_VAGRANTFILE=Vagrantfile vagrant up`
 
 Provision VM with ansible
-`ansible-playbook -i inventories/ml-k8s/hosts-single.yml --ask-become-pass deploy-cluster.yml`
+`ansible-playbook -i inventories/ml-k8s/hosts-single.yml deploy-cluster.yml`
 
-With `--ask-become-pass` key Ansible ask the `sudo` pass on ansible-playbook executor host. This password used for add entry for gateway1 host to /etc/hosts file. Using this entry provide access outside of cluster to Kubernetes apiserver for cluster administration and to Example application as regular user.
+Kubectl config file for kubernetes cluster access would placed at `/home/<ansible user>/.kube/admin.conf`

@@ -30,9 +30,6 @@
   become: yes
   gather_facts: yes
 
-  vars_files:
-    - ansible_executor_become_pass.yml 
-
   vars:
     become_pass: '{{ ansible_executor_become_pass }}'
 
@@ -175,9 +172,9 @@
         #   ansible.builtin.import_role:
         #     name: roles-es-kibana
 
-        # - name: Setup libretranslate
-        #   ansible.builtin.import_role:
-        #     name: role-libretranslate
+        - name: Setup libretranslate
+          ansible.builtin.import_role:
+            name: role-libretranslate
 
         - name: Setup application
           ansible.builtin.import_role:

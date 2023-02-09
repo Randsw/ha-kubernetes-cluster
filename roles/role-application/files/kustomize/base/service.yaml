@@ -4,7 +4,7 @@ kind: Service
 metadata:
   name: service
   labels:
-    app: razmetka
+    app: markup
   annotations:
     prometheus.io/scrape: 'true'
 spec:
@@ -14,4 +14,4 @@ spec:
       protocol: TCP
       targetPort: 10000
   selector:
-    app: razmetka
+    app: markup
