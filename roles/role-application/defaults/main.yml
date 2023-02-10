@@ -5,14 +5,14 @@ kustomize_dir:
 env: dev
 
 dbnet_image:
-  name: busybox
-  tag: "1.34.0"
+  name: nginx
+  tag: "1.23.3"
 
 master_image:
-  name: busybox
-  tag: "1.35.0"
+  name: nginx
+  tag: "1.23"
 
 tesseract_image:
-  name: busybox
-  tag: "1.36.0"
+  name: nginx
+  tag: "1.22.1"
   port: 10001

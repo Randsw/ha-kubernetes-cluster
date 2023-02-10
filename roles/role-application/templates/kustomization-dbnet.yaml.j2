@@ -11,7 +11,7 @@ namePrefix: dbnet-{{ env }}-
 images:
 - name: busybox
   newName: {{ dbnet_image.name }}
-  newTag: {{ dbnet_image.tag }}
+  newTag: {{ dbnet_image.tag | to_json }}
 
 patches:
 - patch: |-

@@ -11,7 +11,7 @@ namePrefix: tesseract-dev-
 images:
 - name: busybox
   newName: {{ tesseract_image.name }}
-  newTag: {{ tesseract_image.tag }}
+  newTag: {{ tesseract_image.tag | to_json }}
 
 patches:
   - patch: |-

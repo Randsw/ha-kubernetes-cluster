@@ -138,39 +138,39 @@
           register: ansible_host_username
           changed_when: false
 
-        # - name: Setup Cilium if set
-        #   ansible.builtin.import_role:
-        #     name: role-cilium
-        #   when: cni_type == "cilium"
+        - name: Setup Cilium if set
+          ansible.builtin.import_role:
+            name: role-cilium
+          when: cni_type == "cilium"
 
-        # - name: Setup kube-prometheus-stack
-        #   ansible.builtin.import_role:
-        #     name: role-prometheus-stack
+        - name: Setup kube-prometheus-stack
+          ansible.builtin.import_role:
+            name: role-prometheus-stack
 
-        # - name: Setup Metallb if set
-        #   ansible.builtin.import_role:
-        #     name: role-metallb
-        #   when: enable_metallb
+        - name: Setup Metallb if set
+          ansible.builtin.import_role:
+            name: role-metallb
+          when: enable_metallb
 
-        # - name: Setup Nginx ingress
-        #   ansible.builtin.import_role:
-        #     name: role-ingress
+        - name: Setup Nginx ingress
+          ansible.builtin.import_role:
+            name: role-ingress
 
-        # - name: Setup local-path-provisioner
-        #   ansible.builtin.import_role:
-        #     name: role-local-path-provisioner
+        - name: Setup local-path-provisioner
+          ansible.builtin.import_role:
+            name: role-local-path-provisioner
 
-        # - name: Setup loki-stack
-        #   ansible.builtin.import_role:
-        #     name: role-loki-stack
+        - name: Setup loki-stack
+          ansible.builtin.import_role:
+            name: role-loki-stack
 
-        # - name: Setup minio
-        #   ansible.builtin.import_role:
-        #     name: role-minio
+        - name: Setup minio
+          ansible.builtin.import_role:
+            name: role-minio
 
-        # - name: Setup elasticsearch and kibana
-        #   ansible.builtin.import_role:
-        #     name: roles-es-kibana
+        - name: Setup elasticsearch and kibana
+          ansible.builtin.import_role:
+            name: roles-es-kibana
 
         - name: Setup libretranslate
           ansible.builtin.import_role:

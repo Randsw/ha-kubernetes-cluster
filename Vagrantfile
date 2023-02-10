@@ -2,7 +2,6 @@
 # vi: set ft=ruby :
 $k8s_instances = 1
 $vm_ip_addr_start = 130
-#$bridge = "usb0" #name of network interface with internet connection 
 $bridge = "wlp2s0" #name of network interface with internet connection 
 $vm_cidr = "192.168.0" # virtual machines CIDR
 Vagrant.configure("2") do |config|

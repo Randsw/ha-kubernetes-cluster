@@ -79,7 +79,7 @@
     kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
     state: present
     definition:
-      apiVersion: extensions/v1beta1
+      apiVersion: networking.k8s.io/v1
       kind: Ingress
       metadata:
         name: libretranslate-ingress
@@ -87,16 +87,27 @@
         labels:
           app: libretranslate
       spec:
+        ingressClassName: nginx
         rules:
         - host: "{{ translate_ingress_host }}"
           http:
             paths:
             - path: "/"
+              pathType: Prefix
               backend:
                 service:
                   name: libretranslate-svc
                   port: 
                     number: 5000
 
-- name: Wait for libretranslate pods become ready
-  ansible.builtin.command: "kubectl wait --namespace={{ application_namespace }} --for=condition=Ready --all pods --timeout=600s"
+- name: Wait till the libretranslate is Ready
+  kubernetes.core.k8s_info:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    kind: Deployment
+    wait: yes
+    name: "libretranslate"
+    namespace: "{{ application_namespace }}"
+    wait_sleep: 10
+    wait_timeout: 360
+    wait_condition:
+      type: Available
