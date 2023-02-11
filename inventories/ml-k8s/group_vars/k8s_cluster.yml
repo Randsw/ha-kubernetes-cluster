@@ -1,7 +1,7 @@
 ---
-enable_metallb: false
+enable_metallb: "{{ true if groups['k8s_ha_control_node'] | length > 1 or groups['k8s_workers'] | length > 0 else false }}"
 cni_type: cilium
-kubernetes_allow_pods_on_control_node: true
+kubernetes_allow_pods_on_control_node: "{{ false if groups['k8s_workers'] | length > 0 else true }}"
 ansible_python_interpreter: /usr/bin/python3
 become_pass: "{{ ansible_executor_become_pass }}"
 ######################### kube vip variables ################################

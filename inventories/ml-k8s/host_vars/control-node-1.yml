@@ -4,7 +4,7 @@ ansible_user: vagrant
 ansible_ssh_private_key_file: "./.vagrant/machines/{{ inventory_hostname }}/virtualbox/private_key"
 
 ###################### Kubernetes variable ############################################
-haproxy_server: false # if not HA config set it to false
+haproxy_server: "{{ true if groups['k8s_ha_control_node'] | length > 1 else false }}"
 kubernetes_role: "first-control-node"
 kubernetes_kubeproxy_mode: "ipvs"
 kubernetes_apiserver_advertise_address: "{{ ansible_host }}"
