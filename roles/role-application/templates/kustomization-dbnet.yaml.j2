@@ -3,6 +3,8 @@ kind: Kustomization
 bases:
 - ../../../base
 
+namespace: {{ application_namespace }}
+
 commonLabels:
   component: dbnet-{{ env }}
 
