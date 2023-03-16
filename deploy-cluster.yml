@@ -127,6 +127,8 @@
 - hosts: k8s_cluster
   become: false
   gather_facts: false
+  vars_files:
+    - ansible_vault_secret.yml
 
   tasks:
     - name: Deploy infrastucture and application

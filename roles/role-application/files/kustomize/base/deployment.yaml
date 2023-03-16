@@ -36,4 +36,4 @@ spec:
             timeoutSeconds: 1
             failureThreshold: 6
       imagePullSecrets:
-        - name: gitlab-markup-secret
+        - name: gitlab-registry

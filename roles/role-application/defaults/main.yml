@@ -1,4 +1,8 @@
 ---
+application_namespace: application
+gitlab_regisry_address: https://192.168.0.1
+gitlab_regisry_user: deploy
+
 kustomize_dir:
   - /home/{{ ansible_host_username.stdout }}/kustomize
 

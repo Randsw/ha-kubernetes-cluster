@@ -1,4 +1,16 @@
 ---
+
+- name: Create namespace
+  kubernetes.core.k8s:
+    kubeconfig: "/home/{{ ansible_host_username.stdout }}/.kube/config"
+    name: "{{ application_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Create secret for image pulling
+  shell: kubectl create secret docker-registry gitlab-registry --docker-server={{ gitlab_regisry_address }} --docker-username={{ gitlab_regisry_user }} --docker-password={{ GLCR_token }} -n {{ application_namespace }}
+
 - name: Create dir for kustomize file
   ansible.builtin.file:
     path: "/home/{{ ansible_host_username.stdout }}/kustomize"
