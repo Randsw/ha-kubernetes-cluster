@@ -34,5 +34,7 @@ localAPIEndpoint:
 ---
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
-cgroupDriver: {{ kubernetes_cgroupDriver }}
+{{ kubernetes_config_kubelet_configuration | to_nice_yaml }}
+{% endif %}
+{% if kubernetes_config_kube_proxy_configuration|length > 0 %}
 

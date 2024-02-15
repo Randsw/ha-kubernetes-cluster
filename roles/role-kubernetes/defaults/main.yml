@@ -15,7 +15,11 @@ calico_version : "v3.25.0"
 
 #kubernetes_role: master
 
+# This is deprecated. Please use kubernetes_config_kubelet_configuration instead.
 kubernetes_kubelet_extra_args: ""
+
+kubernetes_config_kubelet_configuration:
+  cgroupDriver: "systemd"
 kubernetes_kubeadm_init_extra_opts: ""
 kubernetes_join_command_extra_opts: ""
 

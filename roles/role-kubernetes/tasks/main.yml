@@ -33,7 +33,9 @@
 
 - include_tasks: sysctl-setup.yml
 
-- include_tasks: kubelet-setup.yml
+- name: Setup crictl
+  ansible.builtin.command: crictl config runtime-endpoint unix:///var/run/containerd/containerd.sock 
+  changed_when: false
 
 - name: Ensure kubelet is restarted immediately if necessary.
   meta: flush_handlers
